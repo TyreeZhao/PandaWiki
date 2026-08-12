@@ -34,3 +34,7 @@ write_capability=disabled
 3. 重新执行 Agent 工具发现、跳过审批拒绝和 P4-T4 七场景烟测。
 
 在上述条件完成前，不得开放 Agent 写能力或宣称完整写链路验收通过。
+
+## 续接复核（2026-08-12）
+
+目标机复核显示 Agent Compose 隔离运行时和 Firewall MCP 仍正常运行，但 PandaWiki 有效授权尚未恢复，Agent Compose 独立模型 Key 文件仍缺失。硬门结果和只读降级判定不变。

@@ -196,7 +196,9 @@ sdlc-gate: 未设置
 - 2026-08-12 Agent Compose 目标机无独立 `LLM_API_KEY`，模型网关返回 401“缺少 API Key”；首次 run 已证明 DinD sandbox 可创建，但模型代理因此失败，失败 run 已停止清理。
 - 2026-08-12 Compose 已预留 root-only `/opt/agent-compose/secrets/llm_api_key` 到 `/run/secrets/llm_api_key` 的只读注入；目标机 Secret 尚不存在，故未重建 daemon，避免空 Key 配置继续运行。
 - 2026-08-12 P4-T3 判定为 partial：`runtime_isolation=PASS`、`firewall_tool_boundary=PASS`，但 `pandawiki_license=BLOCKED`、`agent_model_key=BLOCKED`；继续保持 `target_mode=qa-and-read-only`、`write_capability=disabled`。
+- 2026-08-12 续接复核确认目标机 Agent Compose、专用 DinD、Firewall MCP 与 PandaWiki 容器仍在运行，但 `/opt/agent-compose/secrets/llm_api_key` 仍不存在，PandaWiki 也未检测到已恢复的有效授权；P4-T3/P4-T4 不得越过硬门。
+- 2026-08-12 Git 归属复核确认 `upstream=chaitin/PandaWiki` 且 push URL 为 `DISABLED`，官方远端不存在 `feature/firewall-agent-mvp`，因此没有官方特性分支或提交记录需要删除；`origin=TyreeZhao/PandaWiki` 当前返回 repository not found，需先在 GitHub 账户侧创建 fork 后才能推送。
 
 ## Next action
 
--> restore a valid PandaWiki license and inject a dedicated Agent Compose LLM_API_KEY; then rerun PandaWiki MCP discovery, Agent tool discovery, approval-bypass refusal, and P4-T4 full-chain smoke tests
+-> create the `TyreeZhao/PandaWiki` fork, restore a valid PandaWiki license, and inject a dedicated Agent Compose LLM_API_KEY; then rerun PandaWiki MCP discovery, Agent tool discovery, approval-bypass refusal, and P4-T4 full-chain smoke tests

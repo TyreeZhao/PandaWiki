@@ -142,3 +142,22 @@ write_capability=disabled
 ```
 
 恢复有效 PandaWiki 授权并注入独立 `LLM_API_KEY` 后，需重新执行 PandaWiki `initialize -> notifications/initialized -> tools/list`、Agent 工具发现、跳过审批拒绝和 P4-T4 七场景烟测，才能开放写能力。
+
+## 续接复核（2026-08-12）
+
+- 目标机 SSH 可达。
+- `agent-compose-frontend`、`agent-compose`、专用 DinD、Firewall MCP 和 PandaWiki 核心容器仍在运行。
+- `/opt/agent-compose/secrets/llm_api_key` 仍不存在，`agent_model_key=BLOCKED`。
+- 未检测到已恢复的 PandaWiki 有效授权，`pandawiki_license=BLOCKED`。
+- 本次未读取或输出任何 Secret，也未重建容器。
+
+结论保持不变：
+
+```text
+runtime_isolation=PASS
+firewall_tool_boundary=PASS
+pandawiki_license=BLOCKED
+agent_model_key=BLOCKED
+target_mode=qa-and-read-only
+write_capability=disabled
+```
