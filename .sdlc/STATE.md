@@ -6,7 +6,7 @@ work-type: feature
 branch: feature/firewall-agent-mvp
 worktree: /Users/zhaotong/Documents/chaitin/code/PandaWiki
 source-leaf: (none)
-updated: 2026-08-13T15:45:33+08:00
+updated: 2026-08-13T17:28:15+08:00
 validate-modes: [correctness, e2e:OpenAPI, eval-bench]
 sdlc-gate: P5-dataset
 
@@ -46,7 +46,7 @@ sdlc-gate: P5-dataset
 - [x] build：P4R-T3 Agent/部署契约与升级兼容性验证（Firewall MCP commit `419c4a3`，Agent revision `2`）
 - [x] build：P4R-T4 无审批 Secret 全链路安全烟测（`SECURITY PASS`）
 - [~] build：P5-T1 30 条数据集与 Rubric 草案生成并结构校验通过（等待真实 annotator/reviewer 身份）
-- [~] build：P5-T2 Eval 核心加载、轨迹校验、verdict 聚合与 CLI 完成（现场 Agent trace 采集适配待补）
+- [x] build：P5-T2 Eval 核心、现场权威 trace、初始 fixture 自动重置与失败恢复完成
 - [ ] validate：correctness 通过
 - [ ] validate：e2e 通过
 - [ ] validate：eval-bench 通过
@@ -110,6 +110,9 @@ sdlc-gate: P5-dataset
 - `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/fixtures/initial-device-state.json`
 - `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/eval/*.go`
 - `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/cmd/eval/main.go`
+- `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/cmd/eval-capture/main.go`
+- `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/cmd/audit-export/main.go`
+- `.sdlc/evidence/p5-eval-capture-and-mcp-log-hardening.md`
 - Existing user changes, unrelated to this feature: `backend/config/config.go`, `backend/domain/llm.go`, `backend/repo/pg/prompt.go`, `backend/store/rag/ct.go`, `backend/store/rag/rag.go`, `backend/usecase/chat.go`, `backend/usecase/llm.go` and their untracked tests; do not modify or revert.
 
 ## Decisions log
@@ -252,7 +255,12 @@ sdlc-gate: P5-dataset
 - 2026-08-13 P5-T1 不能伪造 `annotator/reviewer` 身份或把未人工复核的数据标为 frozen；确认实际标注人与复核人后再生成 30 条冻结集。
 - 2026-08-13 P5-T1 生成 30 条评测数据集草案、Rubric 和初始设备 fixture；`jq` 校验总数 30、类别配比 `10/5/5/5/5`、字段完整性通过。草案保持 `review_status=draft`，等待真实标注/复核身份，未宣称冻结。
 - 2026-08-13 P5-T2 以 TDD 完成 Eval 核心：JSONL 数据集加载、评测契约字段校验、工具调用顺序/禁用工具/参数/终态校验、五维人工分数聚合和安全硬门；`go test -race ./...`、`go build ./...`、`go vet ./...`、`git diff --check` 通过。由于现有证据未定义稳定的 Agent Compose 自动化 API，CLI 当前消费现场 captured trace，不臆造 HTTP 采集协议。Firewall MCP commits `a12da50`, `a0f8b3e`。
+- 2026-08-13 探测 Agent Compose v2608.3.0 JSON CLI 后完成现场采集适配；`RO-01` 由 Firewall MCP 审计还原 `get_device_state`，`SQA-01` 由 Agent 工具事件与 PandaWiki 唯一 `get_docs` 工具契约归因，Firewall MCP commit `9e569d7`。
+- 2026-08-13 发现 PandaWiki MCP INFO 日志记录完整 Authorization Header；因源码位于不可访问的 Pro 子模块，MVP 采用 `LOG_LEVEL=4` 抑制该 INFO hook，并轮换 PandaWiki MCP Token。旧 Token 调用被拒绝，新 Token 与 Agent revision 3 知识检索通过，新日志无 Authorization；生产须改为字段级日志脱敏。
+- 2026-08-13 P5-T2 仍缺每条样本前的初始 fixture 自动重置；正式模拟器当前 `config_version` 非 0，不能以现场采集 PASS 代替可复现 Eval。
+- 2026-08-13 P5-T2 fixture reset 完成（Firewall MCP commit `72ef890`）：`eval-capture` 在每条样本前停止 Firewall MCP、备份 SQLite/WAL/SHM、重建空库并校验 migration 1–3 与运行时表为空；无论 Agent 成功或失败均恢复原库，复制保留 mode/UID/GID，`ACTIVE` 标记和目录锁防并发 run。
+- 2026-08-13 目标机使用新采集器复测 `RO-01`：终态 `READ_ONLY_STATE_QUERIED`，权威审计为 `get_device_state`；停止后备份与恢复库 SHA-256、大小、mode、UID/GID 一致，Firewall MCP 与 Agent Compose 均 healthy/running、restart=0，恢复后无 `ACTIVE` 标记。P5-T2 标记 completed。
 
 ## Next action
 
--> confirm real annotator and reviewer identities; then freeze P5-T1 and collect real Agent traces for P5-T3
+-> confirm real annotator/reviewer identities, review and freeze P5-T1; then execute P5-T3 formal 30-case eval

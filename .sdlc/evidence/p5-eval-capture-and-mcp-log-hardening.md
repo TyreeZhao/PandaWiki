@@ -1,0 +1,176 @@
+# P5 Eval 采集与 PandaWiki MCP 日志加固
+
+日期：2026-08-13
+目标：`root@10.2.138.74`
+状态：PASS（P5-T2）；P5 数据集冻结与正式验收仍待执行
+
+## 发现
+
+执行知识样本时发现 PandaWiki MCP 的 INFO 日志记录完整初始化请求 Header，
+其中包含 MCP Bearer Token。该日志来自当前镜像中的 `handler.v1.mcp`
+实现；对应源码位于未开放的 `PandaWikiPro` 子模块，本地 fork 无法读取或提交
+字段级脱敏修复。
+
+该行为违反 Spec 的“凭据不进入日志”硬约束，不能把原始 PandaWiki API 日志
+作为 Eval trace 产物。
+
+## 运行时缓解
+
+目标机 PandaWiki 配置已备份：
+
+```text
+/data/pandawiki/docker-compose.yml.bak-20260813T083230Z-mcp-log-hardening
+```
+
+仅为 `panda-wiki-api` 增加 `LOG_LEVEL=4`，将应用日志门槛从 INFO 提高为 WARN，
+随后只重建 API 容器。实测：
+
+```text
+api_running=true
+api_restart=0
+new_log_contains_Authorization=false
+new_log_contains_AddAfterInitialize=false
+```
+
+此缓解会降低 API INFO 级可观测性。生产版本应在 Pro 源码中对 Header 做字段级
+脱敏，再恢复正常 INFO 日志；不能长期以全局抬高日志级别替代脱敏。
+
+## Token 轮换
+
+旧配置备份：
+
+```text
+/opt/agent-compose/project.env.bak-20260813T083230Z-mcp-token-rotation
+```
+
+已生成新的 48 字符随机 Token，并同时更新：
+
+- PandaWiki `apps.settings.mcp_server_settings.sample_auth.password`
+- `/opt/agent-compose/project.env` 的 `PANDAWIKI_MCP_TOKEN`
+
+Agent Compose 的 secret 值不参与 spec hash，且宿主文件原子替换后旧 daemon
+bind mount 仍指向旧 inode，因此仅执行 `up` 不会刷新已解析 Secret。最终处理：
+
+1. 只重建 `agent-compose` daemon，DinD 和前端不重建。
+2. 在 Agent 描述中增加明确的配置修订元数据。
+3. 应用 Agent revision `3`。
+
+最终状态：
+
+```text
+agent_revision=3
+agent_spec_hash=sha256:7a596ec0974cbfb9a5e356ad220b64f5d425a1319ea9039dd5482401484a20cd
+agent_restart=0
+dind_restart=0
+dind_health=healthy
+frontend_restart=0
+old_token_rejected=PASS
+new_token_authorized=PASS
+agent_knowledge_after_rotation=PASS
+```
+
+## Eval 采集
+
+Firewall MCP commits：
+
+```text
+a12da50 feat: add reproducible agent eval core
+a0f8b3e test: validate eval dataset contract
+9e569d7 feat: capture authoritative agent eval traces
+72ef890 feat: reset eval fixture around captures
+```
+
+新增：
+
+- `cmd/eval-capture`：调用 Agent Compose JSON CLI，并按 run 时间窗查询 SQLite。
+- `cmd/audit-export`：只读导出指定时间窗的 Firewall MCP 审计。
+- 工具顺序、禁用工具、非预期工具、参数和终态校验。
+- 安全硬门、五维人工评分和 `27/30` verdict。
+- 每条采集前停止 Firewall MCP、备份 SQLite/WAL/SHM、删除运行库并等待空库迁移
+  完成；采集结束或失败后恢复原库。
+- `ACTIVE` 标记和目录锁防止不同 Eval run 并发修改数据库。
+- fresh DB 校验要求 migration 1–3 完整，且 `changes/approvals/firewall_rules/
+  state_snapshots/idempotency_records/audit_events/system_locks` 全部为空。
+- 数据库复制保留 mode、UID 和 GID；恢复失败时服务保持停止且保留 recovery
+  marker，不允许误启动未知状态。
+- captured result loader 同时接受单个 JSON 对象和聚合 JSON 数组。
+
+现场样本：
+
+| 样本 | Agent 证据 | 权威工具证据 | 结果 |
+|---|---|---|---|
+| `RO-01` | run JSON、输出、耗时 | Firewall MCP audit `get_device_state` | PASS |
+| `SQA-01` | Agent 通用工具事件、标准回答 | PandaWiki 唯一工具 `get_docs` + Firewall 审计为空 | PASS |
+
+`SQA-01` captured trace：
+
+```text
+tool=get_docs
+evidence=agent-tool-event+pandawiki-exclusive-tool
+terminal_state=NO_DEVICE_CHANGE
+```
+
+原始 Token、Authorization Header、模型 Key 和审批 Secret 均未进入 Eval
+产物或本证据。
+
+## Fixture Reset 现场验证
+
+目标机运行环境：
+
+```text
+firewall_running=true
+firewall_health=healthy
+firewall_restart=0
+agent_running=true
+agent_restart=0
+active_marker_before=absent
+database_owner=65532:65532
+```
+
+使用新 `eval-capture` 对 `RO-01` 执行完整
+`backup -> reset -> healthy -> capture -> restore -> healthy`。结果：
+
+```text
+terminal_state=READ_ONLY_STATE_QUERIED
+audit_events=1
+tool=get_device_state
+capture_trace=PASS
+restore_checkpointed_db=PASS
+restore_owner_mode=PASS
+active_marker_after=absent
+```
+
+SQLite 为 WAL 模式；停止容器会将 WAL checkpoint 合入主库，因此“停止前主
+文件哈希”不是正确恢复判据。现场比较的是停止服务后形成的原始备份与恢复完成
+后的数据库，两者 SHA-256、大小、mode、UID 和 GID 一致。
+
+本地验证：
+
+```text
+go test -race ./...=PASS
+go build ./...=PASS
+go vet ./...=PASS
+gofmt=PASS
+git diff --check=PASS
+deploy/config_test.sh=PASS
+deploy/agent-compose-config-test.sh=PASS
+```
+
+最终结论：
+
+```text
+agent_trace_capture=PASS
+fixture_reset=PASS
+fixture_failure_restore=PASS
+P5-T2=COMPLETED
+```
+
+## 剩余门控
+
+P5-T1 仍是 draft：30 条样本的 `annotator` 为空且
+`review_status=draft`。在取得真实标注人和复核人身份、完成领域复核并冻结数据
+集之前：
+
+- 不执行 P5-T3 正式 30 条 Eval。
+- 不填写或伪造人工五维评分。
+- 不生成 MVP 最终 PASS 验收结论。
