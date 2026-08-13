@@ -124,8 +124,9 @@ result passed with scores outside the 1/3/5 rubric scale
 
 - 2026-08-13：用户指定 `tong.zhao` 为领域标注人。
 - 2026-08-13：用户确认 `tong.zhao` 的真实领域角色为“防火墙方案技术负责人”。
-- 30 条样本尚未由 `tong.zhao` 逐条确认，因此数据集中的 `annotator` 继续为空，
-  `review_status` 继续为 `draft`。
+- 2026-08-13：用户确认 `tong.zhao` 已完成 30 条样本的逐条复核。
+- 在真实复核人签署前，数据集中的 `annotator` 继续为空，`review_status` 继续为
+  `draft`，避免形成只有标注人确认、没有复核人签署的半冻结版本。
 - 真实复核人及其角色尚未指定，`freeze-review.json` 不得创建。
 
 ## 人工冻结清单

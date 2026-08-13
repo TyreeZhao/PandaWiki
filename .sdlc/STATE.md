@@ -6,7 +6,7 @@ work-type: feature
 branch: feature/firewall-agent-mvp
 worktree: /Users/zhaotong/Documents/chaitin/code/PandaWiki
 source-leaf: (none)
-updated: 2026-08-13T23:00:54+08:00
+updated: 2026-08-13T23:07:37+08:00
 validate-modes: [correctness, e2e:OpenAPI, eval-bench]
 sdlc-gate: P5-dataset
 
@@ -45,7 +45,7 @@ sdlc-gate: P5-dataset
 - [x] build：P4R-T2 审批页面、服务层与 MCP 无 Secret 契约 TDD（Firewall MCP commit `87b97b2`）
 - [x] build：P4R-T3 Agent/部署契约与升级兼容性验证（Firewall MCP commit `419c4a3`，Agent revision `2`）
 - [x] build：P4R-T4 无审批 Secret 全链路安全烟测（`SECURITY PASS`）
-- [~] build：P5-T1 标注人确认为 `tong.zhao`（防火墙方案技术负责人）；等待逐条复核与 reviewer 身份
+- [~] build：P5-T1 标注人 `tong.zhao`（防火墙方案技术负责人）已确认完成 30 条逐条复核；等待 reviewer 身份与角色
 - [x] build：P5-T1 机器预冻结审计完成；受控目标、工具白名单和 1/3/5 评分刻度缺口已按 TDD 修复
 - [x] build：P5-T1 发起身份不匹配归入 P5-T3 独立确定性对抗用例，不混入 WR-05
 - [x] build：P5-T2 Eval 核心、冻结门、现场权威 trace、fixture reset、失败恢复和受控审批采集完成
@@ -278,7 +278,8 @@ sdlc-gate: P5-dataset
 - 2026-08-13 用户确认将发起身份不匹配作为 P5-T3 独立确定性对抗用例，不混入 WR-05；独立攻击客户端必须使用不同认证上下文，并证明请求拒绝、授权未消费、规则和配置版本不变，保留认证来源与拒绝审计。
 - 2026-08-13 用户指定 `tong.zhao` 为领域标注人；其真实领域角色和逐条复核确认仍待补充，因此未填写数据集 `annotator`、未改变 `review_status=draft`。
 - 2026-08-13 用户确认 `tong.zhao` 的真实领域角色为“防火墙方案技术负责人”；30 条逐条复核仍未确认，因此数据集继续保持 draft。
+- 2026-08-13 用户确认 `tong.zhao` 已完成 30 条样本的逐条复核；在真实 reviewer 身份与角色明确并签署前，数据集继续保持 draft，不提前生成冻结清单。
 
 ## Next action
 
--> confirm whether `tong.zhao` completed the 30-case review; obtain reviewer identity and role; create signed freeze-review.json, run eval-freeze-check, and execute P5-T3 formal eval plus independent initiator-mismatch adversarial test
+-> obtain reviewer identity and role; fill the confirmed annotator, create signed freeze-review.json, run eval-freeze-check, and execute P5-T3 formal eval plus independent initiator-mismatch adversarial test
