@@ -1,7 +1,7 @@
 # Agent Compose P4-T3 部署证据
 
 日期：2026-08-12
-状态：PARTIAL（隔离运行时与 Agent 配置完成；模型和 PandaWiki 授权硬门未满足）
+状态：PARTIAL（隔离运行时、Agent 配置和 PandaWiki 授权/MCP 已完成；独立模型 Key 硬门未满足）
 
 ## 部署结果
 
@@ -80,7 +80,7 @@ Firewall MCP 真实协议验证：
 
 批准接口、Shell、SQL、Docker 和通用配置接口未注册为 Agent 工具。
 
-## 当前阻塞
+## 历史阻塞记录（2026-08-12）
 
 ### PandaWiki 授权
 
@@ -96,7 +96,8 @@ PandaWiki MCP 在 2026-08-12 11:02 前仍可完成纯净知识库检索。API �
 403 Feature not available in current edition
 ```
 
-因此当前问题不是 Agent MCP URL、Token 或启动方式错误，而是 PandaWiki 授权被明确删除后触发版本能力门。
+因此当时的问题不是 Agent MCP URL、Token 或启动方式错误，而是 PandaWiki
+授权被明确删除后触发版本能力门。该阻塞已于 2026-08-13 解除，见文末恢复复核。
 
 ### 模型凭据
 
@@ -127,10 +128,10 @@ Agent Compose 已配置独立模型 endpoint 和模型名，Compose 通过只读
 - DinD TLS runtime：PASS
 - Caddy UI 入口：PASS
 - Firewall MCP 8 工具与未审批拒绝：PASS
-- PandaWiki MCP：BLOCKED（许可证已删除）
+- PandaWiki MCP：BLOCKED（2026-08-12 当时许可证已删除；现已恢复）
 - Agent 模型调用：BLOCKED（缺少独立模型 Key）
 
-## 判定
+## 历史判定（2026-08-12）
 
 ```text
 runtime_isolation=PASS
@@ -141,9 +142,11 @@ target_mode=qa-and-read-only
 write_capability=disabled
 ```
 
-恢复有效 PandaWiki 授权并注入独立 `LLM_API_KEY` 后，需重新执行 PandaWiki `initialize -> notifications/initialized -> tools/list`、Agent 工具发现、跳过审批拒绝和 P4-T4 七场景烟测，才能开放写能力。
+该判定记录 2026-08-12 的现场状态。PandaWiki 授权已于 2026-08-13 恢复并完成
+`initialize -> notifications/initialized -> tools/list -> get_docs` 复测；当前只剩独立
+`LLM_API_KEY`。
 
-## 续接复核（2026-08-12）
+## 历史续接复核（2026-08-12）
 
 - 目标机 SSH 可达。
 - `agent-compose-frontend`、`agent-compose`、专用 DinD、Firewall MCP 和 PandaWiki 核心容器仍在运行。
@@ -161,3 +164,31 @@ agent_model_key=BLOCKED
 target_mode=qa-and-read-only
 write_capability=disabled
 ```
+
+## PandaWiki 授权恢复复核（2026-08-13）
+
+PandaWiki PostgreSQL `licenses` 表已恢复为 1 条授权记录，创建时间为
+`2026-08-13 09:19:09 +08:00`。使用 Agent Compose 项目中既有的 PandaWiki
+专用 MCP Token 执行现场复测：
+
+- `initialize`：HTTP 200
+- MCP 协议版本：`2025-03-26`
+- 会话 ID：已返回
+- `tools/list`：唯一工具为 `get_docs`
+- `get_docs`：成功命中纯净知识库的 `GB/T 31499-2026` 第 6.1.2 条及条款证据
+- 错误 Token：在 `get_docs` 调用阶段返回 `unauthorized: invalid token`
+
+当前判定更新为：
+
+```text
+runtime_isolation=PASS
+firewall_tool_boundary=PASS
+pandawiki_license=PASS
+agent_model_key=BLOCKED
+target_mode=qa-and-read-only
+write_capability=disabled
+```
+
+目标机 `/opt/agent-compose/secrets/llm_api_key` 仍不存在，当前执行环境也没有可供
+独立注入的模型 Key。不得复用 PandaWiki 模型凭据。模型 Key 就绪前不重建
+Agent Compose，不宣称 Agent 端完整链路可用。

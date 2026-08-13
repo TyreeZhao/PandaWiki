@@ -6,7 +6,7 @@ work-type: feature
 branch: feature/firewall-agent-mvp
 worktree: /Users/zhaotong/Documents/chaitin/code/PandaWiki
 source-leaf: (none)
-updated: 2026-08-13T09:11:20+08:00
+updated: 2026-08-13T09:23:49+08:00
 validate-modes: [correctness, e2e:OpenAPI, eval-bench]
 sdlc-gate: 未设置
 
@@ -33,7 +33,8 @@ sdlc-gate: 未设置
 - [x] build：P4-T1 implementation (green)
 - [x] build：P4-T2 Firewall MCP 部署与 Caddy 审批路由验证完成
 - [x] build：P4-T3 专用 DinD 隔离、Agent Compose UI、Agent Schema 与 Firewall MCP 工具边界完成
-- [ ] build：P4-T3 恢复 PandaWiki 授权并注入独立模型 Key
+- [x] build：P4-T3 恢复 PandaWiki 授权并复测 MCP
+- [ ] build：P4-T3 注入 Agent Compose 独立模型 Key
 - [x] build：P4-T4 qa-and-read-only 降级烟测及拒绝审计修复完成
 - [ ] build：P4-T4 完整 Agent 问答、审批执行、自动解除和审批码复用烟测
 - [ ] validate：correctness 通过
@@ -204,8 +205,11 @@ sdlc-gate: 未设置
 - 2026-08-13 P4-T4 初次现场烟测发现 Firewall MCP 写工具拒绝路径没有审计事件；按 TDD 新增拒绝审计测试并确认 RED，修复后全仓 `go test -race ./...`、`go vet ./...` 和 diff check 通过，Firewall MCP 提交为 `a3f2281`。
 - 2026-08-13 为兼顾拒绝审计和外键完整性，审计模型新增 `attempted_change_id`，不存在的目标变更 ID 不写入受约束的 `change_id`；SQLite 增量迁移版本 2 幂等执行。
 - 2026-08-13 Firewall MCP 升级为 amd64 镜像 `sha256:850b972f1010963e532d1b1c03c13c4baadc912f10084a482cadc6015cd0c92c`，升级前完成 SQLite 备份；容器健康和运行时限制保持不变。
-- 2026-08-13 P4-T4 降级烟测确认未审批执行返回 `NOT_FOUND`、白名单外地址返回 `INVALID_ARGUMENT`，两者均产生脱敏拒绝审计；前后 `config_version=0` 且 `192.0.2.10` 未封禁。Agent 标准问答、完整写流程和审批码复用仍受 PandaWiki 授权与独立模型 Key 阻断。
+- 2026-08-13 P4-T4 降级烟测确认未审批执行返回 `NOT_FOUND`、白名单外地址返回 `INVALID_ARGUMENT`，两者均产生脱敏拒绝审计；前后 `config_version=0` 且 `192.0.2.10` 未封禁。当时 Agent 标准问答、完整写流程和审批码复用受 PandaWiki 授权与独立模型 Key 阻断；其中授权阻塞现已解除。
+- 2026-08-13 PandaWiki 授权已重新激活：PostgreSQL `licenses` 表恢复为 1 条记录，创建时间为 `2026-08-13 09:19:09 +08:00`。
+- 2026-08-13 授权恢复后 PandaWiki MCP 复测通过：`initialize` 返回 200 并建立会话，`tools/list` 返回唯一 `get_docs`，检索命中纯净知识库的 `GB/T 31499-2026` 第 6.1.2 条及条款证据；错误 Token 在 `get_docs` 调用阶段返回 `unauthorized: invalid token`。
+- 2026-08-13 `pandawiki_license_current=PASS`；当前唯一外部硬门为 `/opt/agent-compose/secrets/llm_api_key` 缺失，且当前执行环境也没有可用于独立注入的模型 Key。继续保持 `write_capability=disabled`，不得复用 PandaWiki 凭据。
 
 ## Next action
 
--> restore a valid PandaWiki license and inject a dedicated Agent Compose LLM_API_KEY; then rerun PandaWiki MCP discovery and the blocked P4-T4 Agent scenarios before starting P5
+-> provide and inject a dedicated Agent Compose LLM_API_KEY; then rebuild Agent Compose, verify dual-MCP discovery, and run the blocked P4-T4 Agent scenarios before starting P5

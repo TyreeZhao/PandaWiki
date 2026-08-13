@@ -402,7 +402,7 @@
 
 ### Task P4-T3: 安全启动 Agent Compose 并连接模型与两个 MCP
 
-- **status**: [~] partial（DinD 隔离、UI、Agent Schema 与 Firewall MCP 工具边界已完成；PandaWiki 授权和独立模型 Key 阻塞）
+- **status**: [~] partial（DinD 隔离、UI、Agent Schema、Firewall MCP 工具边界及 PandaWiki 授权/MCP 复测已完成；独立模型 Key 阻塞）
 - **requirements**: R-01, R-02, R-03, R-04, R-06, R-08, D-03
 - **files**: 目标机 `/opt/agent-compose/compose.mvp.yaml`, 目标机 Agent Compose 的实际 Agent 配置文件, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/docs/agent/system-prompt.md`
 - **read_first**: `.sdlc/evidence/pandawiki-mcp-baseline.md`, `.sdlc/evidence/agent-compose-runtime-baseline.md`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/docs/agent/evidence-contract.md`, `.sdlc/spec.md#5.9-运行时-Guardrail`
@@ -411,7 +411,7 @@
 
 ### Task P4-T4: 执行全链路烟测并记录证据
 
-- **status**: [~] partial / gated（Firewall MCP 只读查询、未审批拒绝、白名单外拒绝及拒绝审计已实测；Agent 问答、完整写流程和审批码复用受 PandaWiki 授权与独立模型 Key 阻断）
+- **status**: [~] partial / gated（PandaWiki MCP 与 Firewall MCP 直连能力、未审批拒绝、白名单外拒绝及拒绝审计已实测；Agent 问答、完整写流程和审批码复用仅受独立模型 Key 阻断）
 - **requirements**: R-01, R-02, R-03, R-04, R-08
 - **files**: `.sdlc/evidence/full-chain-smoke.md`
 - **read_first**: `.sdlc/spec.md#6.1-功能验收`, `.sdlc/evidence/mvp-gate-verdict.md`

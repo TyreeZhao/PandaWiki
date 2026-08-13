@@ -9,23 +9,23 @@
 ```text
 runtime_isolation=PASS
 firewall_tool_boundary=PASS
-pandawiki_license=BLOCKED
+pandawiki_license=PASS
 agent_model_key=BLOCKED
 target_mode=qa-and-read-only
 write_capability=disabled
 ```
 
-- PandaWiki PostgreSQL `licenses` 表当前记录数为 `0`，MCP 仍被 edition 0 能力门拒绝。
+- PandaWiki PostgreSQL `licenses` 表已恢复为 1 条记录，MCP discovery、条款检索和错误 Token 拒绝均复测通过。
 - `/opt/agent-compose/secrets/llm_api_key` 不存在。
 - Agent Compose、专用 TLS DinD、Firewall MCP 和 PandaWiki 核心容器仍在运行。
-- 因模型和知识 MCP 硬门未满足，本次不启动 Agent 写流程，不伪造 UI 或模型结果。
+- 因独立模型 Key 硬门未满足，本次仍不启动 Agent 写流程，不伪造 UI 或模型结果。
 
 ## 七场景结果
 
 | 场景 | 结果 | 工具轨迹 / 证据 | 最终状态 / 审计 |
 |---|---|---|---|
-| 标准问答 | BLOCKED | PandaWiki MCP 在协议处理前返回 edition 0 能力拒绝 | 无模型回答；不得伪造条款证据 |
-| 证据不足问题 | BLOCKED | 同上，且 Agent Compose 缺少独立模型 Key | 无模型回答；拒答行为待凭据恢复后验证 |
+| 标准问答 | PARTIAL | PandaWiki `get_docs` 已命中 `GB/T 31499-2026` 6.1.2 条款证据；Agent Compose 缺少独立模型 Key | 知识侧 PASS，模型回答待 Key 注入后验证 |
+| 证据不足问题 | BLOCKED | PandaWiki MCP 已恢复；Agent Compose 缺少独立模型 Key | 拒答行为待 Key 注入后验证 |
 | 设备状态查询 | PASS（MCP 直连） | `get_device_state`、`get_ip_block_status`、`simulate_traffic_match` | 设备 healthy；`config_version=0`；`192.0.2.10` 未封禁；只读调用有审计 |
 | `192.0.2.10` 15 分钟临时封禁 | DISABLED | 写能力硬门未满足，未 prepare、未审批、未 apply | 无规则变化；未宣称 `AUTO_EXPIRED` |
 | 未审批执行 | PASS（安全拒绝） | `apply_approved_change` 使用不存在变更和无效审批码 | `NOT_FOUND`；审计事件 `5a94511a-047f-4c59-be26-0a72e54b856c`；无规则变化 |
@@ -94,7 +94,7 @@ platform=linux/amd64
 ## 判定
 
 P4-T4 已完成当前 `qa-and-read-only` 模式下可执行的真实烟测，但没有满足完整
-Agent 全链路验收标准。恢复 PandaWiki 有效授权并注入独立模型 Key 后，必须重新执行：
+Agent 全链路验收标准。注入独立模型 Key 后，必须重新执行：
 
 1. 标准问答和证据不足拒答。
 2. Agent 侧设备查询。
