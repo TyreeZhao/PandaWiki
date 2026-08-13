@@ -38,3 +38,15 @@ write_capability=disabled
 ## 续接复核（2026-08-12）
 
 目标机复核显示 Agent Compose 隔离运行时和 Firewall MCP 仍正常运行，但 PandaWiki 有效授权尚未恢复，Agent Compose 独立模型 Key 文件仍缺失。硬门结果和只读降级判定不变。
+
+## P4-T4 降级烟测复核（2026-08-13）
+
+- Firewall MCP 写工具拒绝路径已补齐脱敏、只追加审计，源码提交为 `a3f2281`。
+- 目标机已升级到镜像
+  `sha256:850b972f1010963e532d1b1c03c13c4baadc912f10084a482cadc6015cd0c92c`。
+- 未审批执行返回 `NOT_FOUND`，白名单外地址返回 `INVALID_ARGUMENT`。
+- 两个拒绝场景均有审计事件，且前后配置版本和目标 IP 状态未变化。
+- PandaWiki `licenses` 表仍为空，Agent Compose 独立模型 Key 仍缺失。
+
+因此 `firewall_tool_boundary` 的现场证据增强，但整体硬门结果仍为
+`qa-and-read-only`，不得进入 P5 完整 Agent Eval。

@@ -65,3 +65,32 @@ The target host uses `firecracker-init`, not systemd. No unsupported systemd
 timer was installed. The applied route is present in Caddy's persisted
 `autosave.json`; `/opt/firewall-mcp/apply-caddy.sh` remains the deterministic
 manual reconciliation command.
+
+## Rejected-Write Audit Upgrade
+
+Date: 2026-08-13
+Result: PASS
+
+- Source commit: `a3f2281`
+- Deployed image: `firewall-mcp:mvp-a3f2281`
+- Image ID: `sha256:850b972f1010963e532d1b1c03c13c4baadc912f10084a482cadc6015cd0c92c`
+- Platform: `linux/amd64`
+- Pre-upgrade database backup:
+  `/data/firewall-mcp/backup/firewall.db.pre-a3f2281.20260812T235942Z`
+- SQLite migration versions after restart: `1`, `2`
+- New audit field: `attempted_change_id`
+
+The upgrade fixes a smoke-test finding where rejected `prepare_change` and
+`apply_approved_change` calls returned stable errors but were not audited.
+Rejected calls now produce append-only, redacted events without storing an
+approval code. An attempted ID that does not reference an existing change is
+stored separately from the foreign-key constrained `change_id`.
+
+Remote verification:
+
+- nonexistent change apply -> `NOT_FOUND`
+- outside-allowlist prepare -> `INVALID_ARGUMENT`
+- both calls produced `result=rejected` audit events
+- device `config_version` remained `0`
+- `192.0.2.10` remained unblocked
+- container remained healthy, read-only, limited to 256 MiB and 128 PIDs

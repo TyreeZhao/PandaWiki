@@ -411,6 +411,7 @@
 
 ### Task P4-T4: 执行全链路烟测并记录证据
 
+- **status**: [~] partial / gated（Firewall MCP 只读查询、未审批拒绝、白名单外拒绝及拒绝审计已实测；Agent 问答、完整写流程和审批码复用受 PandaWiki 授权与独立模型 Key 阻断）
 - **requirements**: R-01, R-02, R-03, R-04, R-08
 - **files**: `.sdlc/evidence/full-chain-smoke.md`
 - **read_first**: `.sdlc/spec.md#6.1-功能验收`, `.sdlc/evidence/mvp-gate-verdict.md`

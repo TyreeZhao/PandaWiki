@@ -6,7 +6,7 @@ work-type: feature
 branch: feature/firewall-agent-mvp
 worktree: /Users/zhaotong/Documents/chaitin/code/PandaWiki
 source-leaf: (none)
-updated: 2026-08-12T23:59:00+08:00
+updated: 2026-08-13T09:11:20+08:00
 validate-modes: [correctness, e2e:OpenAPI, eval-bench]
 sdlc-gate: 未设置
 
@@ -34,6 +34,8 @@ sdlc-gate: 未设置
 - [x] build：P4-T2 Firewall MCP 部署与 Caddy 审批路由验证完成
 - [x] build：P4-T3 专用 DinD 隔离、Agent Compose UI、Agent Schema 与 Firewall MCP 工具边界完成
 - [ ] build：P4-T3 恢复 PandaWiki 授权并注入独立模型 Key
+- [x] build：P4-T4 qa-and-read-only 降级烟测及拒绝审计修复完成
+- [ ] build：P4-T4 完整 Agent 问答、审批执行、自动解除和审批码复用烟测
 - [ ] validate：correctness 通过
 - [ ] validate：e2e 通过
 - [ ] validate：eval-bench 通过
@@ -198,7 +200,12 @@ sdlc-gate: 未设置
 - 2026-08-12 P4-T3 判定为 partial：`runtime_isolation=PASS`、`firewall_tool_boundary=PASS`，但 `pandawiki_license=BLOCKED`、`agent_model_key=BLOCKED`；继续保持 `target_mode=qa-and-read-only`、`write_capability=disabled`。
 - 2026-08-12 续接复核确认目标机 Agent Compose、专用 DinD、Firewall MCP 与 PandaWiki 容器仍在运行，但 `/opt/agent-compose/secrets/llm_api_key` 仍不存在，PandaWiki 也未检测到已恢复的有效授权；P4-T3/P4-T4 不得越过硬门。
 - 2026-08-12 Git 归属复核确认 `upstream=chaitin/PandaWiki` 且 push URL 为 `DISABLED`，官方远端不存在 `feature/firewall-agent-mvp`，因此没有官方特性分支或提交记录需要删除；`origin=TyreeZhao/PandaWiki` 当前返回 repository not found，需先在 GitHub 账户侧创建 fork 后才能推送。
+- 2026-08-13 `TyreeZhao/PandaWiki` fork 已可访问，`feature/firewall-agent-mvp` 已推送并跟踪 `origin/feature/firewall-agent-mvp`；官方 `upstream` 仍禁止 push 且不存在该特性分支。
+- 2026-08-13 P4-T4 初次现场烟测发现 Firewall MCP 写工具拒绝路径没有审计事件；按 TDD 新增拒绝审计测试并确认 RED，修复后全仓 `go test -race ./...`、`go vet ./...` 和 diff check 通过，Firewall MCP 提交为 `a3f2281`。
+- 2026-08-13 为兼顾拒绝审计和外键完整性，审计模型新增 `attempted_change_id`，不存在的目标变更 ID 不写入受约束的 `change_id`；SQLite 增量迁移版本 2 幂等执行。
+- 2026-08-13 Firewall MCP 升级为 amd64 镜像 `sha256:850b972f1010963e532d1b1c03c13c4baadc912f10084a482cadc6015cd0c92c`，升级前完成 SQLite 备份；容器健康和运行时限制保持不变。
+- 2026-08-13 P4-T4 降级烟测确认未审批执行返回 `NOT_FOUND`、白名单外地址返回 `INVALID_ARGUMENT`，两者均产生脱敏拒绝审计；前后 `config_version=0` 且 `192.0.2.10` 未封禁。Agent 标准问答、完整写流程和审批码复用仍受 PandaWiki 授权与独立模型 Key 阻断。
 
 ## Next action
 
--> create the `TyreeZhao/PandaWiki` fork, restore a valid PandaWiki license, and inject a dedicated Agent Compose LLM_API_KEY; then rerun PandaWiki MCP discovery, Agent tool discovery, approval-bypass refusal, and P4-T4 full-chain smoke tests
+-> restore a valid PandaWiki license and inject a dedicated Agent Compose LLM_API_KEY; then rerun PandaWiki MCP discovery and the blocked P4-T4 Agent scenarios before starting P5
