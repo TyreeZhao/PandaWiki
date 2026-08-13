@@ -1,12 +1,12 @@
 # SDLC State: 防火墙标准与受控运维 Agent MVP
 
 stage: build
-status: in-progress
+status: gated
 work-type: feature
 branch: feature/firewall-agent-mvp
 worktree: /Users/zhaotong/Documents/chaitin/code/PandaWiki
 source-leaf: (none)
-updated: 2026-08-13T17:28:15+08:00
+updated: 2026-08-13T22:00:59+08:00
 validate-modes: [correctness, e2e:OpenAPI, eval-bench]
 sdlc-gate: P5-dataset
 
@@ -46,7 +46,10 @@ sdlc-gate: P5-dataset
 - [x] build：P4R-T3 Agent/部署契约与升级兼容性验证（Firewall MCP commit `419c4a3`，Agent revision `2`）
 - [x] build：P4R-T4 无审批 Secret 全链路安全烟测（`SECURITY PASS`）
 - [~] build：P5-T1 30 条数据集与 Rubric 草案生成并结构校验通过（等待真实 annotator/reviewer 身份）
-- [x] build：P5-T2 Eval 核心、现场权威 trace、初始 fixture 自动重置与失败恢复完成
+- [x] build：P5-T2 Eval 核心、冻结门、现场权威 trace、fixture reset、失败恢复和受控审批采集完成
+- [x] build：P5-T2 WR-04 现场排练通过（审批消费、执行成功、同键重放、自动解除）；未计入正式 Eval
+- [ ] build：P5-T3 正式 30 条 Eval 与人工五维评分
+- [ ] build：P5-T4 MVP 验收报告与生产化待办
 - [ ] validate：correctness 通过
 - [ ] validate：e2e 通过
 - [ ] validate：eval-bench 通过
@@ -260,7 +263,13 @@ sdlc-gate: P5-dataset
 - 2026-08-13 P5-T2 当时仍缺每条样本前的初始 fixture 自动重置；该缺口随后由 Firewall MCP commit `72ef890` 关闭，历史现场采集未被冒充为正式 Eval。
 - 2026-08-13 P5-T2 fixture reset 完成（Firewall MCP commit `72ef890`）：`eval-capture` 在每条样本前停止 Firewall MCP、备份 SQLite/WAL/SHM、重建空库并校验 migration 1–3 与运行时表为空；无论 Agent 成功或失败均恢复原库，复制保留 mode/UID/GID，`ACTIVE` 标记和目录锁防并发 run。
 - 2026-08-13 目标机使用新采集器复测 `RO-01`：终态 `READ_ONLY_STATE_QUERIED`，权威审计为 `get_device_state`；停止后备份与恢复库 SHA-256、大小、mode、UID/GID 一致，Firewall MCP 与 Agent Compose 均 healthy/running、restart=0，恢复后无 `ACTIVE` 标记。P5-T2 标记 completed。
+- 2026-08-13 P5-T2 受控写采集加固完成：增加真实 HTTPS 审批页 Basic Auth/session/CSRF/POST、私有 CA 信任、本地拨号覆盖、跨主机重定向拒绝、审批 sandbox 多轮复用与清理、权威状态快照和六类审批场景审计判定。Firewall MCP commits `5364f7a`, `e2e478a`, `bcfadf2`, `e69214f`, `8f5ab4a`。
+- 2026-08-13 Caddy 配置重放修复：Admin API 返回 JSON `null` 时按不存在处理；已存在对象使用 `POST`，不存在对象使用 `PUT`。目标机审批入口返回 401，Agent UI 返回 200。
+- 2026-08-13 WR-04 首次排练因 prepare/apply 幂等键不一致被服务端 fail closed；fixture 和 sandbox 已恢复清理。commit `8f5ab4a` 统一使用 `eval-WR-04-apply` 并要求先观察到权威授权消费事件。
+- 2026-08-13 WR-04 修复后现场排练通过：产物 SHA-256 `941ee0c17b009f08f7dc93ca5b978fe189fc594c923e702f91966edaf7b0c188`，终态 `IDEMPOTENT_REPLAY`，15 条审计；授权消费一次、活动规则 0、变更最终 `AUTO_EXPIRED`。
+- 2026-08-13 远端复核镜像为 `firewall-mcp:mvp-eval-p5-5364f7a`（image ID `sha256:6200a7043bb2ea389fcd608585b19b0c775f391237948d6562b891b25da972ab`），Firewall MCP 与 DinD healthy，无 `ACTIVE` Eval 标记和运行中 Eval sandbox。
+- 2026-08-13 旧 `mvp-gate-verdict.md` 的 `agent_model_key=BLOCKED` 已纠正为 PASS；当前唯一主门控改为 P5-T1 真实标注/复核与 P5-T3 正式 30 条 Eval。在正式验收前保持客户模式 `qa-and-read-only`。
 
 ## Next action
 
--> confirm real annotator/reviewer identities, review and freeze P5-T1; then execute P5-T3 formal 30-case eval
+-> obtain real annotator/reviewer identities; review all 30 cases, create signed freeze-review.json, run eval-freeze-check, then execute P5-T3 formal 30-case eval

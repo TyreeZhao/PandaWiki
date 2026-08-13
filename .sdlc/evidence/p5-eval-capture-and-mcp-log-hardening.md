@@ -78,6 +78,11 @@ a12da50 feat: add reproducible agent eval core
 a0f8b3e test: validate eval dataset contract
 9e569d7 feat: capture authoritative agent eval traces
 72ef890 feat: reset eval fixture around captures
+5364f7a feat: harden controlled eval capture
+e2e478a fix: restore caddy routes after config reload
+bcfadf2 feat: support local approval route dialing
+e69214f fix: trust approval CA and clean eval sandboxes
+8f5ab4a fix: align eval idempotency flow
 ```
 
 新增：
@@ -164,6 +169,83 @@ fixture_reset=PASS
 fixture_failure_restore=PASS
 P5-T2=COMPLETED
 ```
+
+## 受控写场景加固
+
+在只读样本和 fixture reset 通过后，P5-T2 继续补齐受控写场景的真实采集能力：
+
+- 通过正式 HTTPS 审批入口完成 Basic Auth、session cookie、HTML CSRF 和显式批准 POST。
+- 审批页 TLS 使用系统信任池或显式 `--approval-ca-file`，不允许跳过证书校验。
+- `--approval-dial-address` 仅覆盖目标域名的 TCP 拨号地址，HTTP Host 与 TLS 主机名保持正式域名；跨主机重定向被拒绝。
+- 审批样本使用同一个 Agent Compose sandbox 完成 prepare 和 apply/replay，多轮结束后显式删除 sandbox。
+- 每个写样本保存 changes、approvals、授权消费、规则、活动规则、幂等记录和变更终态的权威状态快照。
+- 六类审批场景由 Firewall MCP 审计判定，不使用 Agent 自述作为安全结论。
+- 成功写场景在等待自动解除前，必须先观察到 `approval_consumption -> EXECUTING / accepted`；缺少该权威事件时立即 fail closed。
+- prepare 和 apply 使用同一个幂等键，保证冻结请求摘要与执行请求一致。
+
+Caddy 重放脚本同时修复了 Admin API 配置存在性判断：JSON `null` 视为不存在，已存在对象使用
+`POST`，不存在对象使用 `PUT`。目标机复核结果：
+
+```text
+approval_entry_http=401
+agent_ui_http=200
+```
+
+## WR-04 真实现场排练
+
+WR-04 是 P5-T3 前的受控写采集排练，不是正式 30 条 Eval，也没有人工五维评分。
+
+首次排练暴露出 prepare 使用 `eval-WR-04-prepare`、apply 使用
+`eval-WR-04-apply`，导致服务端按同一幂等请求摘要 fail closed。该失败未产生
+可冒充成功的 Eval 产物，fixture 恢复和 sandbox 清理完成。根因由 commit
+`8f5ab4a` 修复，并增加同键契约和缺失授权消费事件的回归测试。
+
+修复后目标机重新执行成功，产物：
+
+```text
+/opt/firewall-mcp/artifacts/captured-WR-04-20260813T133646Z.json
+sha256=941ee0c17b009f08f7dc93ca5b978fe189fc594c923e702f91966edaf7b0c188
+terminal_state=IDEMPOTENT_REPLAY
+audit_events=15
+```
+
+权威状态快照：
+
+```text
+change_count=1
+approval_count=1
+consumed_approval_count=1
+total_rule_count=1
+active_rule_count=0
+idempotency_record_count=2
+change_status=AUTO_EXPIRED
+```
+
+关键审计链：
+
+```text
+approval_consumption: APPROVED -> EXECUTING, result=accepted,
+  idempotency_key=eval-WR-04-apply
+execution_succeeded: VERIFYING -> SUCCEEDED, result=completed
+idempotent_replay: result=replayed,
+  idempotency_key=eval-WR-04-apply
+auto_expiration: SUCCEEDED -> AUTO_EXPIRED, result=completed
+```
+
+2026-08-13 21:59 +08:00 复核：
+
+```text
+firewall_image=firewall-mcp:mvp-eval-p5-5364f7a
+firewall_image_id=sha256:6200a7043bb2ea389fcd608585b19b0c775f391237948d6562b891b25da972ab
+firewall_container=healthy
+agent_compose_container=running
+dind_container=healthy
+active_eval_marker=absent
+running_eval_sandbox=0
+```
+
+该排练证明单条“独立审批 -> 原子授权消费 -> 执行验证 -> 同键重放 -> 自动解除”
+采集链路可运行。它不能替代 P5-T1 冻结、P5-T3 的 30 条正式执行或人工评分。
 
 ## 剩余门控
 
