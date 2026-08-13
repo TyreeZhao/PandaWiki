@@ -120,6 +120,14 @@ result passed with scores outside the 1/3/5 rubric scale
 不变，并保留认证来源、拒绝错误码、审计事件和前后状态摘要。这样比在一个 Agent
 质量样本中混合参数篡改、幂等攻击和身份攻击更可重复，也能明确失败根因。
 
+## 人工身份状态
+
+- 2026-08-13：用户指定 `tong.zhao` 为领域标注人。
+- `tong.zhao` 的真实领域角色尚待确认。
+- 30 条样本尚未由 `tong.zhao` 逐条确认，因此数据集中的 `annotator` 继续为空，
+  `review_status` 继续为 `draft`。
+- 真实复核人及其角色尚未指定，`freeze-review.json` 不得创建。
+
 ## 人工冻结清单
 
 - 标注人逐条核对 prompt、human reference、标准编号、年份、条款和摘要。

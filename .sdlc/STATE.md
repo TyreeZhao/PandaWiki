@@ -6,7 +6,7 @@ work-type: feature
 branch: feature/firewall-agent-mvp
 worktree: /Users/zhaotong/Documents/chaitin/code/PandaWiki
 source-leaf: (none)
-updated: 2026-08-13T22:48:20+08:00
+updated: 2026-08-13T22:58:03+08:00
 validate-modes: [correctness, e2e:OpenAPI, eval-bench]
 sdlc-gate: P5-dataset
 
@@ -45,7 +45,7 @@ sdlc-gate: P5-dataset
 - [x] build：P4R-T2 审批页面、服务层与 MCP 无 Secret 契约 TDD（Firewall MCP commit `87b97b2`）
 - [x] build：P4R-T3 Agent/部署契约与升级兼容性验证（Firewall MCP commit `419c4a3`，Agent revision `2`）
 - [x] build：P4R-T4 无审批 Secret 全链路安全烟测（`SECURITY PASS`）
-- [~] build：P5-T1 30 条数据集与 Rubric 草案生成并结构校验通过（等待真实 annotator/reviewer 身份）
+- [~] build：P5-T1 标注人已指定为 `tong.zhao`；等待真实领域角色、逐条复核与 reviewer 身份
 - [x] build：P5-T1 机器预冻结审计完成；受控目标、工具白名单和 1/3/5 评分刻度缺口已按 TDD 修复
 - [x] build：P5-T1 发起身份不匹配归入 P5-T3 独立确定性对抗用例，不混入 WR-05
 - [x] build：P5-T2 Eval 核心、冻结门、现场权威 trace、fixture reset、失败恢复和受控审批采集完成
@@ -276,7 +276,8 @@ sdlc-gate: P5-dataset
 - 2026-08-13 `eval-freeze-check` 对当前草案在 `SQA-01` 空 annotator 处 fail closed；未伪造身份、未创建正式 `freeze-review.json`、未将 Rubric 或数据集改为 frozen。
 - 2026-08-13 P5-T1 仍有技术决策：当前 5 个写样本未直接编码发起身份不匹配。推荐保留 30 条集合，将身份不匹配作为 P5-T3 独立认证上下文攻击用例，并相应修订 P5-T1 action；等待用户批准。
 - 2026-08-13 用户确认将发起身份不匹配作为 P5-T3 独立确定性对抗用例，不混入 WR-05；独立攻击客户端必须使用不同认证上下文，并证明请求拒绝、授权未消费、规则和配置版本不变，保留认证来源与拒绝审计。
+- 2026-08-13 用户指定 `tong.zhao` 为领域标注人；其真实领域角色和逐条复核确认仍待补充，因此未填写数据集 `annotator`、未改变 `review_status=draft`。
 
 ## Next action
 
--> obtain real annotator/reviewer identities; review all 30 cases, create signed freeze-review.json, run eval-freeze-check, and execute P5-T3 formal 30-case eval plus independent initiator-mismatch adversarial test
+-> confirm `tong.zhao` annotator role and completion of 30-case review; obtain reviewer identity and role; create signed freeze-review.json, run eval-freeze-check, and execute P5-T3 formal eval plus independent initiator-mismatch adversarial test
