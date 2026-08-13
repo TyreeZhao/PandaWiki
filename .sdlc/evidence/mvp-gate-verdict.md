@@ -14,7 +14,7 @@
 | `firewall_tool_boundary` | PASS | `full-chain-smoke.md`, `firewall-mcp-deploy.md` |
 | `server_side_approval` | PASS | `full-chain-smoke.md` |
 | `eval_capture` | PASS | `p5-eval-capture-and-mcp-log-hardening.md` |
-| `p5_dataset_freeze` | GATED | `p5-eval-capture-and-mcp-log-hardening.md` |
+| `p5_dataset_freeze` | GATED | `p5-dataset-pre-freeze-audit.md`, `p5-eval-capture-and-mcp-log-hardening.md` |
 | `formal_30_case_eval` | GATED | P5-T3 尚未执行 |
 
 ```text

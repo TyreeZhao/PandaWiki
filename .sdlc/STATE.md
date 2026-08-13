@@ -6,7 +6,7 @@ work-type: feature
 branch: feature/firewall-agent-mvp
 worktree: /Users/zhaotong/Documents/chaitin/code/PandaWiki
 source-leaf: (none)
-updated: 2026-08-13T22:00:59+08:00
+updated: 2026-08-13T22:24:34+08:00
 validate-modes: [correctness, e2e:OpenAPI, eval-bench]
 sdlc-gate: P5-dataset
 
@@ -46,6 +46,8 @@ sdlc-gate: P5-dataset
 - [x] build：P4R-T3 Agent/部署契约与升级兼容性验证（Firewall MCP commit `419c4a3`，Agent revision `2`）
 - [x] build：P4R-T4 无审批 Secret 全链路安全烟测（`SECURITY PASS`）
 - [~] build：P5-T1 30 条数据集与 Rubric 草案生成并结构校验通过（等待真实 annotator/reviewer 身份）
+- [x] build：P5-T1 机器预冻结审计完成；受控目标、工具白名单和 1/3/5 评分刻度缺口已按 TDD 修复
+- [~] build：P5-T1 发起身份不匹配归属待确认（30 条数据集或 P5-T3 独立对抗用例）
 - [x] build：P5-T2 Eval 核心、冻结门、现场权威 trace、fixture reset、失败恢复和受控审批采集完成
 - [x] build：P5-T2 WR-04 现场排练通过（审批消费、执行成功、同键重放、自动解除）；未计入正式 Eval
 - [ ] build：P5-T3 正式 30 条 Eval 与人工五维评分
@@ -269,7 +271,11 @@ sdlc-gate: P5-dataset
 - 2026-08-13 WR-04 修复后现场排练通过：产物 SHA-256 `941ee0c17b009f08f7dc93ca5b978fe189fc594c923e702f91966edaf7b0c188`，终态 `IDEMPOTENT_REPLAY`，15 条审计；授权消费一次、活动规则 0、变更最终 `AUTO_EXPIRED`。
 - 2026-08-13 远端复核镜像为 `firewall-mcp:mvp-eval-p5-5364f7a`（image ID `sha256:6200a7043bb2ea389fcd608585b19b0c775f391237948d6562b891b25da972ab`），Firewall MCP 与 DinD healthy，无 `ACTIVE` Eval 标记和运行中 Eval sandbox。
 - 2026-08-13 旧 `mvp-gate-verdict.md` 的 `agent_model_key=BLOCKED` 已纠正为 PASS；当前唯一主门控改为 P5-T1 真实标注/复核与 P5-T3 正式 30 条 Eval。在正式验收前保持客户模式 `qa-and-read-only`。
+- 2026-08-13 P5-T1 预冻结审计发现 Eval 数据集契约未限制目标网段、允许任意 expected tool、且聚合器接受 Rubric 外的 4 分；三项均先复现 RED，再修复为复用执行策略、公开工具白名单/集合互斥和单样本+聚合双层 `1/3/5` 校验。Firewall MCP commit `22d4dfe`。
+- 2026-08-13 30 条草案机器审计通过：30 个唯一 ID、`10/5/5/5/5` 配比、14 个有效知识引用、6 个 OCR 样本全部要求限定结论、受控写目标均在 `192.0.2.1-254`、README 三个摘要一致、Secret 值形态扫描无命中。
+- 2026-08-13 `eval-freeze-check` 对当前草案在 `SQA-01` 空 annotator 处 fail closed；未伪造身份、未创建正式 `freeze-review.json`、未将 Rubric 或数据集改为 frozen。
+- 2026-08-13 P5-T1 仍有技术决策：当前 5 个写样本未直接编码发起身份不匹配。推荐保留 30 条集合，将身份不匹配作为 P5-T3 独立认证上下文攻击用例，并相应修订 P5-T1 action；等待用户批准。
 
 ## Next action
 
--> obtain real annotator/reviewer identities; review all 30 cases, create signed freeze-review.json, run eval-freeze-check, then execute P5-T3 formal 30-case eval
+-> decide initiator-mismatch coverage placement; then obtain real annotator/reviewer identities, review all 30 cases, create signed freeze-review.json, run eval-freeze-check, and execute P5-T3 formal 30-case eval

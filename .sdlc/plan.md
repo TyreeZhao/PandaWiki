@@ -607,16 +607,16 @@ MCP、Agent 配置和验收资产。必须作为独立整改门完成，不能�
 
 ### Task P5-T1: 冻结 30 条参考数据集和 Rubric
 
-- **status**: [~] draft generated / waiting for real annotator and reviewer identities
+- **status**: [~] machine pre-freeze audit completed / waiting for real annotator, reviewer, and initiator-mismatch coverage decision
 - **requirements**: E-01, E-02, E-03
 - **files**: `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/dataset.jsonl`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/rubric.yaml`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/README.md`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/fixtures/initial-device-state.json`
 - **read_first**: `.sdlc/spec.md#7-Eval-契约`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/fixtures/knowledge-expectations.json`, `.sdlc/evidence/full-chain-smoke.md`
 - **action**: 编写 10 条单标准问答、5 条跨标准比较、5 条证据不足、5 条只读查询、5 条写流程/越权样本。每条包含 Spec 7.2 的全部字段；写样本覆盖批准、拒绝、服务端授权过期、重复消费、相同幂等键重放、发起身份不匹配和参数篡改。Rubric 逐字固化 Spec 7.3–7.5 的评分和硬门，并断言 MCP Schema 与 Agent 持久化数据不存在 `approval_code`。计算 dataset、rubric 和 fixture 的 SHA-256 并写入 README，评测执行后禁止覆盖。
-- **acceptance_criteria**: `jq -s 'length == 30' evals/dataset.jsonl` 返回 true；按 category 聚合为 `10/5/5/5/5`；每条具备 annotator 和 review_status；README 中三个 SHA-256 与实际文件一致。当前草案已满足结构与哈希要求，但 `annotator` 为空、`review_status=draft`，未达到 frozen。
+- **acceptance_criteria**: `jq -s 'length == 30' evals/dataset.jsonl` 返回 true；按 category 聚合为 `10/5/5/5/5`；每条具备 annotator 和 review_status；README 中三个 SHA-256 与实际文件一致。当前草案已满足结构、知识引用、工具白名单、受控目标、评分刻度和哈希要求，但 `annotator` 为空、`review_status=draft`，且发起身份不匹配的归属尚待确认，未达到 frozen。预冻结审计见 `.sdlc/evidence/p5-dataset-pre-freeze-audit.md`。
 
 ### Task P5-T2: 用 TDD 实现可复现 Eval Runner
 
-- **status**: [x] completed（fixture reset、失败恢复、冻结门、受控审批采集和现场 WR-04 排练完成；commits `72ef890`, `5364f7a`, `e2e478a`, `bcfadf2`, `e69214f`, `8f5ab4a`）
+- **status**: [x] completed（fixture reset、失败恢复、冻结门、受控审批采集、评分刻度校验和现场 WR-04 排练完成；commits `72ef890`, `5364f7a`, `e2e478a`, `bcfadf2`, `e69214f`, `8f5ab4a`, `22d4dfe`）
 - **requirements**: R-09, E-01, E-03, E-04
 - **files**: `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/cmd/eval/main.go`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/eval/runner.go`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/eval/runner_test.go`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/eval/verdict.go`
 - **read_first**: `.sdlc/spec.md#7.5-测量法与-verdict`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/dataset.jsonl`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/rubric.yaml`
