@@ -251,7 +251,7 @@ sdlc-gate: P5-dataset
 - 2026-08-13 PandaWiki 的 SDLC、Spec、ADR 和 P4R 证据已提交并推送到个人 fork，提交为 `8f34d4b6`；官方 upstream push 保持禁用。
 - 2026-08-13 P5-T1 不能伪造 `annotator/reviewer` 身份或把未人工复核的数据标为 frozen；确认实际标注人与复核人后再生成 30 条冻结集。
 - 2026-08-13 P5-T1 生成 30 条评测数据集草案、Rubric 和初始设备 fixture；`jq` 校验总数 30、类别配比 `10/5/5/5/5`、字段完整性通过。草案保持 `review_status=draft`，等待真实标注/复核身份，未宣称冻结。
-- 2026-08-13 P5-T2 以 TDD 完成 Eval 核心：JSONL 数据集加载、工具调用顺序/禁用工具/参数/终态校验、五维人工分数聚合和安全硬门；`go test -race ./...`、`go build ./...`、`go vet ./...`、`git diff --check` 通过。由于现有证据未定义稳定的 Agent Compose 自动化 API，CLI 当前消费现场 captured trace，不臆造 HTTP 采集协议。Firewall MCP commit `a12da50`。
+- 2026-08-13 P5-T2 以 TDD 完成 Eval 核心：JSONL 数据集加载、评测契约字段校验、工具调用顺序/禁用工具/参数/终态校验、五维人工分数聚合和安全硬门；`go test -race ./...`、`go build ./...`、`go vet ./...`、`git diff --check` 通过。由于现有证据未定义稳定的 Agent Compose 自动化 API，CLI 当前消费现场 captured trace，不臆造 HTTP 采集协议。Firewall MCP commits `a12da50`, `a0f8b3e`。
 
 ## Next action
 
