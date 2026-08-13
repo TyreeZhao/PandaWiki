@@ -6,7 +6,7 @@ work-type: feature
 branch: feature/firewall-agent-mvp
 worktree: /Users/zhaotong/Documents/chaitin/code/PandaWiki
 source-leaf: (none)
-updated: 2026-08-13T23:07:37+08:00
+updated: 2026-08-13T23:18:01+08:00
 validate-modes: [correctness, e2e:OpenAPI, eval-bench]
 sdlc-gate: P5-dataset
 
@@ -45,12 +45,12 @@ sdlc-gate: P5-dataset
 - [x] build：P4R-T2 审批页面、服务层与 MCP 无 Secret 契约 TDD（Firewall MCP commit `87b97b2`）
 - [x] build：P4R-T3 Agent/部署契约与升级兼容性验证（Firewall MCP commit `419c4a3`，Agent revision `2`）
 - [x] build：P4R-T4 无审批 Secret 全链路安全烟测（`SECURITY PASS`）
-- [~] build：P5-T1 标注人 `tong.zhao`（防火墙方案技术负责人）已确认完成 30 条逐条复核；等待 reviewer 身份与角色
+- [x] build：P5-T1 30 条 Eval 数据集与 Rubric 已由 `tong.zhao`（防火墙方案技术负责人）逐条复核并冻结（Firewall MCP commit `d4d9ad8`）
 - [x] build：P5-T1 机器预冻结审计完成；受控目标、工具白名单和 1/3/5 评分刻度缺口已按 TDD 修复
 - [x] build：P5-T1 发起身份不匹配归入 P5-T3 独立确定性对抗用例，不混入 WR-05
 - [x] build：P5-T2 Eval 核心、冻结门、现场权威 trace、fixture reset、失败恢复和受控审批采集完成
 - [x] build：P5-T2 WR-04 现场排练通过（审批消费、执行成功、同键重放、自动解除）；未计入正式 Eval
-- [ ] build：P5-T3 正式 30 条 Eval 与人工五维评分
+- [~] build：P5-T3 正式 30 条 Eval 与人工五维评分；数据集冻结门已通过，待执行
 - [ ] build：P5-T4 MVP 验收报告与生产化待办
 - [ ] validate：correctness 通过
 - [ ] validate：e2e 通过
@@ -279,7 +279,9 @@ sdlc-gate: P5-dataset
 - 2026-08-13 用户指定 `tong.zhao` 为领域标注人；其真实领域角色和逐条复核确认仍待补充，因此未填写数据集 `annotator`、未改变 `review_status=draft`。
 - 2026-08-13 用户确认 `tong.zhao` 的真实领域角色为“防火墙方案技术负责人”；30 条逐条复核仍未确认，因此数据集继续保持 draft。
 - 2026-08-13 用户确认 `tong.zhao` 已完成 30 条样本的逐条复核；在真实 reviewer 身份与角色明确并签署前，数据集继续保持 draft，不提前生成冻结清单。
+- 2026-08-13 用户确认由 `tong.zhao` 同时承担标注人与 reviewer 两个 MVP 逻辑角色，角色为“防火墙方案技术负责人”；生产阶段再升级为严格职责分离。
+- 2026-08-13 Firewall MCP Eval 冻结门通过：30 条样本、Rubric、初始 fixture 摘要匹配，`eval-freeze-check` 返回 PASS；冻结清单为 `evals/freeze-review.json`，提交为 `d4d9ad8`。
 
 ## Next action
 
--> obtain reviewer identity and role; fill the confirmed annotator, create signed freeze-review.json, run eval-freeze-check, and execute P5-T3 formal eval plus independent initiator-mismatch adversarial test
+-> execute P5-T3 formal 30-case Eval, human five-dimensional scoring, and independent initiator-mismatch adversarial test

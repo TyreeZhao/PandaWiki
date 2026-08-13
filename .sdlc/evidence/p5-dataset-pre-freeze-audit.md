@@ -11,10 +11,13 @@
 摘要和 Secret 边界均已通过机器审计。审计中发现 3 个冻结前安全缺口，均按
 TDD 修复并提交为 Firewall MCP commit `22d4dfe`。
 
-数据集仍不能冻结，原因是：
+数据集已于 2026-08-13 完成人工复核并通过冻结门。冻结版本：
 
-1. 30 条样本的 `annotator` 均为空，`review_status` 均为 `draft`。
-2. 尚无真实复核人签署的 `freeze-review.json`。
+1. 30 条样本的 `annotator` 均为 `tong.zhao`，`review_status` 均为 `frozen`。
+2. Rubric 为 `status=frozen`、`review_status=approved`。
+3. `evals/freeze-review.json` 由 `tong.zhao` 以“防火墙方案技术负责人”
+   角色签署；MVP 允许同一自然人承担标注人与 reviewer 两个逻辑角色。
+4. `eval-freeze-check` 返回 PASS，数据集、Rubric 和初始 fixture 摘要匹配。
 
 ## 机器审计
 
@@ -34,7 +37,7 @@ TDD 修复并提交为 Firewall MCP commit `22d4dfe`。
 | Rubric 评分值 | PASS | 聚合器仅接受 `1/3/5` |
 | Secret 契约 | PASS | 四项 `*_allowed` 均为 false，无凭据值形态命中 |
 | README 摘要 | PASS | dataset、rubric、fixture 三个 SHA-256 一致 |
-| 冻结 fail closed | PASS | 当前在 `SQA-01` 空 annotator 处拒绝 |
+| 冻结 fail closed | PASS | draft 状态会被拒绝；完整冻结包已通过校验 |
 
 当前摘要：
 
@@ -125,9 +128,18 @@ result passed with scores outside the 1/3/5 rubric scale
 - 2026-08-13：用户指定 `tong.zhao` 为领域标注人。
 - 2026-08-13：用户确认 `tong.zhao` 的真实领域角色为“防火墙方案技术负责人”。
 - 2026-08-13：用户确认 `tong.zhao` 已完成 30 条样本的逐条复核。
-- 在真实复核人签署前，数据集中的 `annotator` 继续为空，`review_status` 继续为
-  `draft`，避免形成只有标注人确认、没有复核人签署的半冻结版本。
-- 真实复核人及其角色尚未指定，`freeze-review.json` 不得创建。
+- 2026-08-13：用户确认由 `tong.zhao` 同时担任 reviewer，角色仍为“防火墙方案
+  技术负责人”；生产阶段再升级为严格职责分离。
+- 数据集、Rubric 和 `freeze-review.json` 已更新，冻结门禁通过。
+- Firewall MCP 冻结提交：`d4d9ad8`。
+
+冻结摘要：
+
+```text
+dataset.jsonl                         fb551f491ccd18d32a2ae3dd9996eeb89e5deab5de4d4d1208559e9f19db696f
+rubric.yaml                           014c55faeee2be488c659d6b43d2bfd9b89a0c29078003391e948ee55229a7ce
+fixtures/initial-device-state.json   735c43c256b2149dd29d8033bbc3bd5fd9b202e289ee232662b842c1a2ba8f63
+```
 
 ## 人工冻结清单
 
