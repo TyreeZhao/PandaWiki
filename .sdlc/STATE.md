@@ -6,9 +6,9 @@ work-type: feature
 branch: feature/firewall-agent-mvp
 worktree: /Users/zhaotong/Documents/chaitin/code/PandaWiki
 source-leaf: (none)
-updated: 2026-08-13T15:08:55+08:00
+updated: 2026-08-13T15:15:58+08:00
 validate-modes: [correctness, e2e:OpenAPI, eval-bench]
-sdlc-gate: P4R-build
+sdlc-gate: P5-dataset
 
 ## Gates passed
 
@@ -45,6 +45,7 @@ sdlc-gate: P4R-build
 - [x] build：P4R-T2 审批页面、服务层与 MCP 无 Secret 契约 TDD（Firewall MCP commit `87b97b2`）
 - [x] build：P4R-T3 Agent/部署契约与升级兼容性验证（Firewall MCP commit `419c4a3`，Agent revision `2`）
 - [x] build：P4R-T4 无审批 Secret 全链路安全烟测（`SECURITY PASS`）
+- [ ] build：P5-T1 冻结 30 条参考数据集与 Rubric（等待真实 annotator/reviewer 身份）
 - [ ] validate：correctness 通过
 - [ ] validate：e2e 通过
 - [ ] validate：eval-bench 通过
@@ -239,7 +240,10 @@ sdlc-gate: P4R-build
 - 2026-08-13 P4R-T1/T2 已在 Firewall MCP 独立仓库完成；P4R-T3 本地配置、静态 Secret 扫描、迁移重复启动和 SQLite 外键完整性检查通过，远端升级留给 P4R-T4。
 - 2026-08-13 P4R-T4 完成：目标机升级为服务端审批授权镜像，真实变更 `0b485a01-d490-4eba-9887-268dc736d04c` 经独立审批和无 Secret apply 后进入 `AUTO_EXPIRED`，同幂等键重放返回原结果，不同键返回 `APPROVAL_CONSUMED`。
 - 2026-08-13 远端 migration 3、`integrity_check=ok`、外键检查和审批字段扫描通过；Agent Compose 配置更新为 revision 2，新 sandbox 明确不索取审批码或执行 Secret。P4R 最终为 `SECURITY PASS`。
+- 2026-08-13 Firewall MCP 服务端审批整改代码已提交为 `87b97b2`、`a50b9f7`、`8d91225`、`419c4a3`，本地工作区 clean；该独立仓库尚无 remote，且 GitHub CLI 未登录，暂不能推送。
+- 2026-08-13 PandaWiki 的 SDLC、Spec、ADR 和 P4R 证据已提交并推送到个人 fork，提交为 `8f34d4b6`；官方 upstream push 保持禁用。
+- 2026-08-13 P5-T1 不能伪造 `annotator/reviewer` 身份或把未人工复核的数据标为 frozen；确认实际标注人与复核人后再生成 30 条冻结集。
 
 ## Next action
 
--> enter P5-T1 and freeze the 30-case eval dataset; P4R gate passed
+-> confirm real annotator and reviewer identities, then execute P5-T1 and freeze the 30-case eval dataset

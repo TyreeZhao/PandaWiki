@@ -607,6 +607,7 @@ MCP、Agent 配置和验收资产。必须作为独立整改门完成，不能�
 
 ### Task P5-T1: 冻结 30 条参考数据集和 Rubric
 
+- **status**: [~] ready / waiting for real annotator and reviewer identities
 - **requirements**: E-01, E-02, E-03
 - **files**: `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/dataset.jsonl`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/rubric.yaml`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/README.md`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/fixtures/initial-device-state.json`
 - **read_first**: `.sdlc/spec.md#7-Eval-契约`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/fixtures/knowledge-expectations.json`, `.sdlc/evidence/full-chain-smoke.md`

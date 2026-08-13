@@ -2,7 +2,8 @@
 
 > 核验日期：2026-08-13
 > 代码仓库：`/Users/zhaotong/Documents/chaitin/code/firewall-mcp`
-> 提交：`8d91225`, `419c4a3`
+> Firewall MCP 提交：`87b97b2`, `a50b9f7`, `8d91225`, `419c4a3`
+> PandaWiki SDLC/ADR 提交：`8f34d4b6`
 
 ## 本地验证
 
@@ -64,3 +65,11 @@ Agent Compose 正式配置升级为 revision `2`，spec hash 为
 
 当前容器均 `restart=0`，Firewall MCP 与专用 DinD 均 healthy。
 P4R 安全整改结论：`SECURITY PASS`。
+
+## 仓库提交状态
+
+- PandaWiki：`feature/firewall-agent-mvp` 已推送至个人 fork
+  `TyreeZhao/PandaWiki`；官方 `upstream` 的 push URL 保持 `DISABLED`。
+- Firewall MCP：`feature/two-phase-approved-changes` 工作区 clean，上述代码提交均已
+  本地落库。当前仓库未配置 remote，且本机 GitHub CLI 未登录，因此尚未推送。
+- PandaWiki 工作区中与本特性无关的 backend 修改和测试文件未纳入本次提交。
