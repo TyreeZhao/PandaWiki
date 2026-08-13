@@ -1,20 +1,22 @@
 # SDLC State: 防火墙标准与受控运维 Agent MVP
 
 stage: build
-status: gated
+status: in-progress
 work-type: feature
 branch: feature/firewall-agent-mvp
 worktree: /Users/zhaotong/Documents/chaitin/code/PandaWiki
 source-leaf: (none)
-updated: 2026-08-13T09:23:49+08:00
+updated: 2026-08-13T15:08:55+08:00
 validate-modes: [correctness, e2e:OpenAPI, eval-bench]
-sdlc-gate: 未设置
+sdlc-gate: P4R-build
 
 ## Gates passed
 
 - [x] onboard：PROFILE.md 已建立 / 已确认无漂移
 - [x] spec：spec.md 已获批（含 AI 工作的 eval 标准）
+- [x] spec amendment：ADR-0002 服务端审批授权修订获批
 - [x] plan：plan.md 已拆分
+- [x] plan amendment：P4R 服务端审批授权安全整改计划获批
 - [x] build：P0 环境与知识能力硬门核验完成
 - [x] build：P1-T2 tests written (red)
 - [x] build：P1-T2 implementation (green)
@@ -34,9 +36,15 @@ sdlc-gate: 未设置
 - [x] build：P4-T2 Firewall MCP 部署与 Caddy 审批路由验证完成
 - [x] build：P4-T3 专用 DinD 隔离、Agent Compose UI、Agent Schema 与 Firewall MCP 工具边界完成
 - [x] build：P4-T3 恢复 PandaWiki 授权并复测 MCP
-- [ ] build：P4-T3 注入 Agent Compose 独立模型 Key
+- [x] build：P4-T3 注入 Agent Compose 独立模型 Key
+- [x] build：P4-T3 修复 Agent Compose 工具调用运行时空结果
+- [x] build：P4-T3 启用 daemon 控制面 Bearer Token 并固化 v2608 Compose 镜像
 - [x] build：P4-T4 qa-and-read-only 降级烟测及拒绝审计修复完成
-- [ ] build：P4-T4 完整 Agent 问答、审批执行、自动解除和审批码复用烟测
+- [x] build：P4-T4 完整 Agent 问答、审批执行、自动解除和审批码复用功能烟测
+- [x] build：P4R-T1 服务端授权迁移与原子消费 TDD（Firewall MCP commits `87b97b2`, `8d91225`）
+- [x] build：P4R-T2 审批页面、服务层与 MCP 无 Secret 契约 TDD（Firewall MCP commit `87b97b2`）
+- [x] build：P4R-T3 Agent/部署契约与升级兼容性验证（Firewall MCP commit `419c4a3`，Agent revision `2`）
+- [x] build：P4R-T4 无审批 Secret 全链路安全烟测（`SECURITY PASS`）
 - [ ] validate：correctness 通过
 - [ ] validate：e2e 通过
 - [ ] validate：eval-bench 通过
@@ -52,6 +60,7 @@ sdlc-gate: 未设置
 ## Changed-files snapshot
 
 - `.sdlc/spec.md`
+- `docs/adr/0002-server-side-approval-authorization.md`
 - `.sdlc/plan.md`
 - `.sdlc/evidence/pandawiki-mcp-baseline.md`
 - `.sdlc/evidence/knowledge-quality-baseline.md`
@@ -209,7 +218,28 @@ sdlc-gate: 未设置
 - 2026-08-13 PandaWiki 授权已重新激活：PostgreSQL `licenses` 表恢复为 1 条记录，创建时间为 `2026-08-13 09:19:09 +08:00`。
 - 2026-08-13 授权恢复后 PandaWiki MCP 复测通过：`initialize` 返回 200 并建立会话，`tools/list` 返回唯一 `get_docs`，检索命中纯净知识库的 `GB/T 31499-2026` 第 6.1.2 条及条款证据；错误 Token 在 `get_docs` 调用阶段返回 `unauthorized: invalid token`。
 - 2026-08-13 `pandawiki_license_current=PASS`；当前唯一外部硬门为 `/opt/agent-compose/secrets/llm_api_key` 缺失，且当前执行环境也没有可用于独立注入的模型 Key。继续保持 `write_capability=disabled`，不得复用 PandaWiki 凭据。
+- 2026-08-13 独立模型 Key 已以 root-only 文件注入 Agent Compose；补齐 Compose 只读挂载与 daemon 启动导出后仅重建 daemon，DinD 和前端未重建，最小模型请求返回 `MODEL_OK`，`agent_model_key=PASS`。
+- 2026-08-13 Agent 业务烟测发现 `v2607.10.0` 在需要 MCP 工具调用时 run 虽标记 succeeded，但最终输出为空或只有中间话术；同一模型网关直连的无工具与单工具请求均正常，两个 MCP 也能完成 initialize/tools discovery，根因收敛到 Agent Compose LLM facade/provider 运行链。
+- 2026-08-13 OpenCode 对照项目能列出 PandaWiki 1 个与 Firewall 8 个工具，但实际工具场景仍为空；测试项目已移除，正式 `firewall-agent-mvp` 项目已重新 up，现有服务保持 `v2607.10.0` 运行。
+- 2026-08-13 官方最新稳定版为 `v2608.3.0`（2026-08-07）；后续版本包含 Responses 文本保留与 OpenAI 兼容网关空/截断结果修复。已从官方 tag `316acbed6b85a9dadc48acc027d79619fbd23cec` 用 Go 1.26.4 编译 Docker-only Linux/amd64 daemon，SHA256 为 `a128facdd16782d5930f055b46032281fe1a7719b7942269a9ba67aa49306d73`。
+- 2026-08-13 已上传并校验 `v2608.3.0` Docker-only daemon；隔离 canary 使用全新 V2 data root 验证通过。正式切换前备份 ID 为 `20260813T040433Z`，旧 v2607 data root 保留在 `/opt/agent-compose/backups/20260813T040433Z/data-v2607`，未执行不可验证的原地 SQLite 迁移。
+- 2026-08-13 正式 Agent Compose 已切换为 `v2608.3.0-mvp-docker`，Agent 配置固定为 `provider=opencode`、`model=default/deepseek-v4-pro`、`LLM_MAX_OUTPUT_TOKENS=65536`。标准问答和 Firewall 设备只读查询真实工具调用通过；证据不足问题 canary 通过但正式实例观察窗口内超时，写能力继续禁用。
+- 2026-08-13 正式 daemon、专用 DinD 和前端均运行且 `restart=0`，容器内 UI 健康检查通过；目标机本地访问 Caddy `:2445` 连接超时，记录为待复核的入口网络观察项。
+- 2026-08-13 正式 Agent 完成临时封禁、独立审批、审批消费、执行验证和自动解除；变更 `babf206f-54ee-484b-9f29-0249a72e6f77` 最终进入 `AUTO_EXPIRED`，`192.0.2.10 blocked=false`，自动解除审计事件为 `d4b93f1b-6af0-439b-a115-056f407e957e`。
+- 2026-08-13 审批码复用功能负路径返回 `APPROVAL_CONSUMED` 且无第二条规则；未审批、白名单外和复用三条负路径均未改变目标外配置。
+- 2026-08-13 发现审批码通过 Agent prompt 进入两个 Agent Compose sandbox 的 prompt/cell/event 持久化产物；已通过 CLI 删除两个敏感 sandbox，目录和 `ps -a` 元数据均消失，Firewall MCP 数据目录和 daemon 日志未发现审批码明文。
+- 2026-08-13 Agent Compose 的普通 `secret` run env 仍会进入 sandbox `EnvItems` 持久化，且模型读取后仍可能进入 transcript，不能作为审批码安全通道；根因分类为 Spec/设计缺陷。
+- 2026-08-13 启用 `AGENT_COMPOSE_AUTH_TOKEN` 时发现 Compose 镜像版本漂移：配置仍覆盖为 v2607，重建触发 V2 schema 不兼容并退出。数据库未损坏；已将 Compose、`.env` 和 `.installer-state.env` 固定为 `v2608.3.0-mvp-docker`，daemon 恢复 `restart=0`。
+- 2026-08-13 daemon 控制面认证验证通过：正确 Token 返回 200，缺失或错误 Token 返回 401；UI 返回 200，daemon 无宿主机 Docker Socket，重建后 Agent 只读查询通过。
+- 2026-08-13 已形成 proposed ADR-0002 与 Spec 修订草案：保留 prepare、独立审批和 apply 三步流程，但审批授权只存在于 Firewall MCP 服务端；Agent 不再接触审批码或任何执行 Secret。批准前实现保持冻结。
+- 2026-08-13 用户批准 Spec 修订与 ADR-0002；ADR-0002 状态更新为 accepted，审批授权只在 Firewall MCP 服务端保存和消费，Agent 不再接触执行 Secret。
+- 2026-08-13 已修订 `.sdlc/plan.md`，新增 P4R 安全整改阶段和 4 个任务；P5 改为强依赖 P4R，计划修订获批前实现继续冻结。
+- 2026-08-13 P4R 采用保守迁移：所有旧审批升级后统一失效，必须重新 prepare 和审批；MVP 发起身份绑定为 `agent-compose` 服务级身份，逐用户身份隔离留待生产 IAM。
+- 2026-08-13 用户批准 P4R 计划修订，进入 sdlc-build；从 P4R-T1 的迁移与服务端授权原子消费 RED 测试开始，P5 继续冻结。
+- 2026-08-13 P4R-T1/T2 已在 Firewall MCP 独立仓库完成；P4R-T3 本地配置、静态 Secret 扫描、迁移重复启动和 SQLite 外键完整性检查通过，远端升级留给 P4R-T4。
+- 2026-08-13 P4R-T4 完成：目标机升级为服务端审批授权镜像，真实变更 `0b485a01-d490-4eba-9887-268dc736d04c` 经独立审批和无 Secret apply 后进入 `AUTO_EXPIRED`，同幂等键重放返回原结果，不同键返回 `APPROVAL_CONSUMED`。
+- 2026-08-13 远端 migration 3、`integrity_check=ok`、外键检查和审批字段扫描通过；Agent Compose 配置更新为 revision 2，新 sandbox 明确不索取审批码或执行 Secret。P4R 最终为 `SECURITY PASS`。
 
 ## Next action
 
--> provide and inject a dedicated Agent Compose LLM_API_KEY; then rebuild Agent Compose, verify dual-MCP discovery, and run the blocked P4-T4 Agent scenarios before starting P5
+-> enter P5-T1 and freeze the 30-case eval dataset; P4R gate passed

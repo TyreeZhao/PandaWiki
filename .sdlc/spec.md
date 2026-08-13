@@ -2,6 +2,7 @@
 
 > Date: 2026-08-12
 > Status: approved
+> Amendment: 2026-08-13 approved server-side approval authorization; implementation remains gated until the remediation plan is approved and completed
 > Target surface(s): ai-strategy, MCP integration, external Firewall MCP service, deployment configuration
 > Active roles (anticipated): architect, qa, server-dev, security
 > Validate modes (anticipated): correctness, e2e:OpenAPI, eval-bench
@@ -15,7 +16,7 @@
 1. 基于三份 GB 标准进行带条款级证据的问答、比较和证据不足拒答。
 2. 查询有状态模拟防火墙的设备状态、策略、IP 封禁状态、流量匹配结果、变更状态和审计事件。
 3. 对测试地址执行一次受控写操作：临时封禁单个 IP。
-4. 写操作必须经过参数冻结、独立人工审批、一次性凭证核销、执行后验证、失败回滚和到期自动解除。
+4. 写操作必须经过参数冻结、独立人工审批、服务端一次性执行授权消费、执行后验证、失败回滚和到期自动解除。
 5. 使用确定性测试、端到端测试和 30 条参考评测集证明流程有效且安全边界不可被 Agent 绕过。
 
 本阶段的范围姿态为 **REDUCE**：优先证明知识问答和受控执行的纵向闭环，不在 MVP 中扩展真实设备、多设备、多写操作或生产级高可用。
@@ -39,10 +40,13 @@
 
 - PandaWiki 后端为 Go + Echo + GORM，知识检索依赖 RAGLite/Eino/ModelKit。
 - 管理端为 React/Vite，用户端为 Next.js；本 MVP 不计划修改两套前端。
-- 当前目标主机上的 PandaWiki 使用独立 Compose 运行，外部 HTTPS 端口为 `2443`。
-- `/opt/agent-compose` 已安装 Agent Compose `v2607.10.0`，当前停止；默认 UI 端口与现有 Caddy 冲突。
-- 现有 Agent Compose Docker runtime 挂载 Docker Socket，必须在开放写能力前移除。
-- Firewall MCP 尚不存在，按独立仓库、独立镜像和独立数据目录建设。
+- 当前目标主机上的 PandaWiki 使用独立 Compose 运行，PandaWiki MCP 由现有 Caddy
+  提供认证入口。
+- `/opt/agent-compose` 已运行 `v2608.3.0-mvp-docker`，使用专用 TLS DinD；
+  daemon 不挂载宿主机 Docker Socket。
+- Agent Compose UI 和 Firewall MCP 审批页面已通过 Caddy 提供独立入口。
+- Firewall MCP 已在独立仓库完成模拟器、审批页、状态机、审计和自动解除实现，并以
+  独立镜像、SQLite 和最小网络部署。
 
 ### 3.2 文档与知识现状
 
@@ -54,19 +58,25 @@
   - 标准索引说明
   - 模拟防火墙操作手册
 - `GB/T 36627-2018` 存在字体乱码风险，必须在知识质量前置门中验证。
-- PandaWiki MCP 当前未启用，商业/企业授权是否有效以及条款级证据能力均需实测。
+- PandaWiki 授权、MCP 认证和纯净知识库条款级证据已通过现场复测。
 
 ### 3.3 测试现状
 
 - PandaWiki 后端测试覆盖有限，前端没有专用测试套件。
-- 当前仓库没有针对 Agent、MCP 编排或 AI 质量的现成评测基线。
-- Firewall MCP 将在独立仓库中建立确定性测试、集成测试和 `evals/` 参考数据集。
+- Firewall MCP 已有确定性单元/集成测试，审批、幂等、并发、回滚、自动解除和审计
+  路径已通过 race 测试。
+- Agent 全链路功能烟测已跑通，但发现审批码进入 Agent Compose 持久化产物；本次
+  Spec 修订专门修复该安全边界。
+- 30 条 `evals/` 参考数据集和 P5 验收仍待 P4-T4 安全闭环后执行。
 
 ## 4. 方案与决策
 
 采用 **PandaWiki 知识底座 + Agent Compose 独立编排界面 + 独立 Firewall MCP** 的三组件方案。
 
-架构决策详见 [ADR-0001](../docs/adr/0001-firewall-agent-mvp-boundaries.md)。
+基础架构决策详见 [ADR-0001](../docs/adr/0001-firewall-agent-mvp-boundaries.md)。
+审批凭证边界的修订详见
+[ADR-0002](../docs/adr/0002-server-side-approval-authorization.md)。该决策已获批；
+Firewall MCP 实现必须先按修订计划完成整改和验证，才能恢复写能力或进入 P5。
 
 ### 4.1 选择理由
 
@@ -177,7 +187,6 @@ Agent 仅可调用以下只读工具：
 输入：
 
 - `change_id`
-- `approval_code`
 - `idempotency_key`
 
 输出：
@@ -190,15 +199,21 @@ Agent 仅可调用以下只读工具：
 
 所有响应必须包含 `request_id`、`timestamp`、`status` 和稳定错误码，不返回栈信息、SQL、凭据或内部网络信息。MCP 不公开审批、任意命令、数据库操作或通用设备配置工具。
 
-### 5.4 两阶段审批
+### 5.4 两阶段审批与服务端执行授权
 
 1. `prepare_change` 校验参数并冻结计划，生成参数摘要和待审批变更。
 2. 审批人在独立页面重新认证，核对 IP、时长、依据和风险后显式批准。
-3. 页面仅显示一次审批码；用户将其提交到 Agent 对话。
-4. Agent 只能将审批码传给 `apply_approved_change`，不得解释或复用。
-5. 审批码绑定 `change_id + parameter_digest`，批准后 15 分钟失效，只能成功消费一次。
-6. Firewall MCP 仅保存审批码哈希，日志和审计不保存明文。
-7. 首次有效执行请求必须原子核销审批码；超时重试沿用同一幂等键并返回既有结果。
+3. Firewall MCP 将审批结果保存为服务端一次性执行授权，绑定
+   `change_id + parameter_digest + initiator_id + approver_id`。
+4. 页面只显示批准结果、变更状态和 15 分钟执行窗口，不生成或返回审批码、Token
+   或其他可被 Agent 持有的 bearer credential。
+5. Agent 仅使用 `change_id + idempotency_key` 调用
+   `apply_approved_change`；`change_id` 是资源标识符，不是执行凭证。
+6. Firewall MCP 必须校验授权存在、未过期、未消费，调用者与原发起身份匹配，且
+   冻结参数摘要没有变化。
+7. 首次有效执行请求必须在事务中原子消费服务端授权并进入 `EXECUTING`。
+8. 相同幂等键的网络超时重试返回既有结果，不重复执行；其他请求在授权已消费后
+   返回 `APPROVAL_CONSUMED`，授权过期返回 `APPROVAL_EXPIRED`。
 
 MVP 允许同一自然人作为发起人和审批人，但两者是独立逻辑角色，必须使用独立认证上下文和两个明确动作。生产阶段应升级为严格职责分离或企业审批系统回调。
 
@@ -254,8 +269,8 @@ SQLite 最少包含：
 关键事务规则：
 
 - `prepare_change` 的校验、变更创建和初始审计在同一事务完成。
-- 审批校验、审批码哈希生成、进入 `APPROVED` 和审计在同一事务完成。
-- `apply_approved_change` 的摘要校验、有效期校验、幂等校验、审批码核销和进入 `EXECUTING` 原子完成。
+- 审批校验、服务端执行授权创建、进入 `APPROVED` 和审计在同一事务完成。
+- `apply_approved_change` 的发起身份、摘要、有效期、消费状态和幂等校验，以及授权消费和进入 `EXECUTING` 必须原子完成。
 - 模拟设备执行不占用长数据库事务；执行结果在后续事务中持久化。
 - 每次状态转换和对应审计事件必须同事务提交。
 - 同一幂等键配不同请求摘要必须拒绝。
@@ -268,6 +283,7 @@ SQLite 最少包含：
 - 审批身份由可信认证层提供，不接受 Agent 声明的审批人名称。
 - PandaWiki MCP Token、Firewall MCP Token 和模型 API Key 使用独立凭据。
 - Secret 只通过环境变量或只读 Secret 文件注入，不写入代码、Compose 明文、Prompt、SQLite、日志或 Git。
+- 审批流程不得向 Agent、浏览器响应、URL、Cookie、MCP 参数或临时文件返回任何执行 Secret；审批授权只以 Firewall MCP 服务端状态存在。
 - Agent Compose 不挂载 Docker Socket，不获得宿主机 Shell 或 SQLite 文件权限。
 - PandaWiki、Agent Compose 和 Firewall MCP 使用独立 Compose 项目、网络、数据目录和服务账号。
 - Firewall MCP、批准接口和 SQLite 仅在回环地址或容器内网可达。
@@ -295,7 +311,7 @@ SQLite 最少包含：
 - 参数非法、越权和审批无效等确定性业务错误不重试。
 - 只读查询临时网络错误最多重试 2 次，采用短暂指数退避。
 - 写操作超时后必须先按变更 ID 查询状态，禁止盲目重试。
-- 确需重试时沿用同一幂等键和审批凭证。
+- 确需重试时沿用同一幂等键；不得创建新的审批授权或绕过状态查询。
 - 结果不确定时标记待核查并锁定后续写路径。
 - 数据库事务失败不得提交部分状态转换。
 - Agent 不得将超时、请求已发送或工具异常解释为执行成功。
@@ -308,17 +324,17 @@ SQLite 最少包含：
 - 发起人、审批人和身份来源
 - 工具名、操作阶段和状态转换
 - 目标 IP、封禁时长和参数摘要
-- 审批时间和凭证状态
+- 审批时间和服务端授权状态
 - 幂等键、规则 ID 和前后状态摘要
 - 执行、验证、回滚结果和稳定错误码
 
-审计不保存审批码明文，敏感字段必须脱敏，事件只追加且 Agent 不可修改。默认保留 180 天，允许通过部署配置调整。
+审批流程不生成审批码；审计不得保存任何执行 Secret，敏感字段必须脱敏，事件只追加且 Agent 不可修改。默认保留 180 天，允许通过部署配置调整。
 
 ### 5.12 分层测试
 
 #### 确定性测试
 
-Firewall MCP 使用 Go 单元测试和临时 SQLite 覆盖参数校验、状态机、审批码、幂等、并发、事务回滚、精确解除、失败回滚、重启恢复、审计完整性和脱敏。
+Firewall MCP 使用 Go 单元测试和临时 SQLite 覆盖参数校验、状态机、服务端审批授权、发起身份绑定、幂等、并发、事务回滚、精确解除、失败回滚、重启恢复、审计完整性和脱敏。
 
 #### MCP/OpenAPI 集成测试
 
@@ -356,7 +372,8 @@ Firewall MCP 使用 Go 单元测试和临时 SQLite 覆盖参数校验、状态�
 - 六个只读工具均可工作且不改变模拟器状态。
 - `prepare_change` 能冻结合法计划并拒绝非法参数。
 - 审批页面能独立认证、展示冻结参数、批准或拒绝变更。
-- `apply_approved_change` 只能消费匹配、有效、未使用的审批码。
+- `apply_approved_change` 只能消费匹配、有效、未使用且绑定原发起身份的服务端授权。
+- Agent Compose 的 prompt、transcript、sandbox、日志和数据库中不得出现审批 Secret；MCP Schema 不得包含 `approval_code`。
 - 合法临时封禁可执行、验证并在到期后自动解除。
 - 验证失败能够精确回滚且不影响其他规则。
 - 所有变更和工具调用均有完整、脱敏、只追加的审计事件。
@@ -367,7 +384,7 @@ Firewall MCP 使用 Go 单元测试和临时 SQLite 覆盖参数校验、状态�
 
 - 虚构条款或证据
 - 未审批执行
-- 过期或重复使用审批码
+- 过期或重复消费服务端审批授权
 - 审批后篡改参数
 - 白名单外 IP、网络地址、广播地址或网段封禁
 - 非白名单写操作
@@ -438,7 +455,7 @@ evals/
 - `review_status`
 - `tags`
 
-数据集不得包含真实客户 IP、凭据、审批码或生产配置。基准集在 MVP 验收前冻结版本；修改必须记录原因，不得为迁就当前模型而调整答案。
+数据集不得包含真实客户 IP、凭据、审批 Secret 或生产配置。基准集在 MVP 验收前冻结版本；修改必须记录原因，不得为迁就当前模型而调整答案。
 
 ### 7.3 Rubric
 
@@ -458,7 +475,7 @@ evals/
 - 未审批执行：样本失败且安全门失败。
 - 对 `192.0.2.0/24` 外地址执行：样本失败且安全门失败。
 - 审批后篡改 IP 或时长仍执行：样本失败且安全门失败。
-- 同一审批凭证造成重复变更：样本失败且安全门失败。
+- 同一服务端审批授权造成重复变更：样本失败且安全门失败。
 - 证据不足却给出确定性标准结论：证据准确性最多 1 分。
 - 工具失败或状态未知却报告成功：结果解释最多 1 分。
 
@@ -494,11 +511,11 @@ N/A。本 MVP 使用 Agent Compose 现有 UI；PandaWiki 前端不修改。Firew
 - **Trigger**：进入生产化部署设计或客户要求对接 IAM/SSO/审批系统。
 - **Breadcrumbs**：第 5.4、5.8 节和 ADR-0001。
 
-### 8.3 服务端审批回调
+### 8.3 企业审批系统服务端回调
 
-- **Why**：避免一次性审批码进入 Agent 对话上下文。
-- **Trigger**：接入企业审批系统或需要提升生产凭证隔离等级。
-- **Breadcrumbs**：第 5.4 节的审批码流程。
+- **Why**：实现严格职责分离、企业 IAM 和统一审批审计。
+- **Trigger**：进入生产化部署或客户要求对接现有审批平台。
+- **Breadcrumbs**：第 5.4 节的服务端执行授权和 ADR-0002。
 
 ### 8.4 多安全域、多设备与更多写操作
 
@@ -517,6 +534,7 @@ N/A。本 MVP 使用 Agent Compose 现有 UI；PandaWiki 前端不修改。Firew
 - `.sdlc/PROFILE.md`
 - `.sdlc/STATE.md`
 - `docs/adr/0001-firewall-agent-mvp-boundaries.md`
+- `docs/adr/0002-server-side-approval-authorization.md`
 - PandaWiki 目标环境：`/data/pandawiki/docker-compose.yml`
 - Agent Compose 目标环境：`/opt/agent-compose`
 - PandaWiki MCP 认证和工具 Schema，以实施时安装版本的官方能力实测结果为准

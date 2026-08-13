@@ -3,6 +3,7 @@
 > 来源 spec: `.sdlc/spec.md`（已批准）
 > 复杂度等级: L3 —— 虽为单机 MVP，但跨 PandaWiki、Agent Compose、独立 Firewall MCP、审批安全边界、部署与 AI Eval，且包含高风险写路径
 > 生成: 2026-08-12T16:23:52+08:00
+> 修订: 2026-08-13T13:53:23+08:00 —— 新增 ADR-0002 对应的 P4R 服务端审批授权安全整改阶段
 > Firewall MCP 本地仓库: `/Users/zhaotong/Documents/chaitin/code/firewall-mcp`
 > Firewall MCP 目标机目录: `/opt/firewall-mcp`
 > Firewall MCP 目标机数据目录: `/data/firewall-mcp`
@@ -14,15 +15,16 @@
 | R-01 | Spec 1, 5.2 | 三份 GB 标准的条款级证据问答、比较和证据不足拒答 |
 | R-02 | Spec 1, 5.3 | 六个 Firewall MCP 只读工具 |
 | R-03 | Spec 1, 5.5 | 仅对 `192.0.2.0/24` 单主机执行 5–60 分钟临时封禁 |
-| R-04 | Spec 5.4, 5.6 | 参数冻结、独立审批、一次性凭证、状态机和终态查询 |
-| R-05 | Spec 5.7, 5.11 | SQLite 持久化、幂等、事务状态转换和只追加审计 |
-| R-06 | Spec 5.8, 5.9 | 身份、Secret、网络隔离、去 Docker Socket 和 fail-closed Guardrail |
-| R-07 | Spec 5.10 | 分类错误处理、只读有限重试、写超时先查状态 |
+| R-04 | Spec 5.4, 5.6 | 参数冻结、独立审批、服务端一次性执行授权、状态机和终态查询 |
+| R-05 | Spec 5.7, 5.11 | SQLite 持久化、授权原子消费、幂等、事务状态转换和只追加审计 |
+| R-06 | Spec 5.8, 5.9 | 身份绑定、审批 Secret 不进入 Agent、网络隔离、去 Docker Socket 和 fail-closed Guardrail |
+| R-07 | Spec 5.10 | 分类错误处理、服务端授权过期/消费错误、只读有限重试、写超时先查状态 |
 | R-08 | Spec 4.3, 5.1 | 单机 Caddy、Agent Compose、PandaWiki MCP、Firewall MCP 集成 |
 | R-09 | Spec 5.12, 6 | 确定性测试、MCP 集成测试、端到端验收和交付产物 |
 | D-01 | ADR-0001 | PandaWiki、Agent Compose、Firewall MCP 三组件职责分离 |
 | D-02 | Spec 4 | Firewall MCP 使用独立 Go 仓库、`mcp-go`、SQLite 和独立镜像 |
 | D-03 | Spec 5.13 | 三项写能力开放硬门，失败则降级到问答与只读 |
+| D-04 | ADR-0002 | 审批授权只在 Firewall MCP 服务端保存和消费，Agent 不接触执行 Secret |
 | E-01 | Spec 7.2 | 30 条冻结参考评测集及确定性 fixture |
 | E-02 | Spec 7.3 | 五维 1/3/5 分 Rubric |
 | E-03 | Spec 7.4 | 虚构证据、越权执行、参数篡改、重复执行等安全硬门 |
@@ -37,7 +39,8 @@
 | P2 | 纯净知识库与证据基线 | R-01, E-01 | P0 | 2 |
 | P3 | 审批执行闭环与服务接口 | R-02, R-03, R-04, R-05, R-06, R-07 | P1 | 3 |
 | P4 | 单机部署与 Agent 全链路接线 | R-01, R-02, R-03, R-04, R-06, R-08, D-03 | P2, P3 | 4 |
-| P5 | Eval、对抗测试与 MVP 验收 | R-09, E-01, E-02, E-03, E-04 | P4 | 5 |
+| P4R | 服务端审批授权安全整改 | R-04, R-05, R-06, R-07, R-08, R-09, D-04, E-03 | P4 | 5 |
+| P5 | Eval、对抗测试与 MVP 验收 | R-09, E-01, E-02, E-03, E-04 | P4R | 6 |
 
 ---
 
@@ -127,7 +130,7 @@
   - 状态机只允许 Spec 定义的转换。
   - 状态转换和审计事件同事务提交。
   - 同一幂等键配不同摘要被拒绝。
-  - 审批码数据库只保存哈希。
+  - 初始实现的审批码数据库只保存哈希；该历史方案由 P4R 按 ADR-0002 迁移为服务端授权。
 - artifacts:
   - `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/go.mod`
   - `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/domain/change.go`
@@ -305,6 +308,7 @@
 ### Task P3-T2: 用 TDD 实现 prepare、审批核销和 apply 服务
 
 - **status**: [x] completed（commit `ac25281`）
+- **superseded_by**: P4R-T1, P4R-T2（保留为历史实施记录）
 - **requirements**: R-03, R-04, R-05, R-07
 - **files**: `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/service/change_service.go`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/service/change_service_test.go`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/security/approval_code.go`
 - **read_first**: `.sdlc/spec.md#5.4-两阶段审批`, `.sdlc/spec.md#5.7-持久化与事务边界`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/store/sqlite/store.go`
@@ -333,6 +337,7 @@
 ### Task P3-T4: 实现独立认证审批页面
 
 - **status**: [x] completed（commit `560d395`）
+- **superseded_by**: P4R-T2（保留为历史实施记录）
 - **requirements**: R-04, R-06
 - **files**: `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/http/approval.go`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/http/approval_test.go`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/http/templates/approval.html`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/auth/session.go`
 - **read_first**: `.sdlc/spec.md#5.4-两阶段审批`, `.sdlc/spec.md#5.8-身份密钥与网络`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/service/change_service.go`
@@ -402,7 +407,7 @@
 
 ### Task P4-T3: 安全启动 Agent Compose 并连接模型与两个 MCP
 
-- **status**: [~] partial（DinD 隔离、UI、Agent Schema、Firewall MCP 工具边界及 PandaWiki 授权/MCP 复测已完成；独立模型 Key 阻塞）
+- **status**: [x] completed（专用 TLS DinD、双 MCP、独立模型 Key、v2608.3.0 daemon 和 Chat Completions provider 路由已通过隔离及正式回归）
 - **requirements**: R-01, R-02, R-03, R-04, R-06, R-08, D-03
 - **files**: 目标机 `/opt/agent-compose/compose.mvp.yaml`, 目标机 Agent Compose 的实际 Agent 配置文件, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/docs/agent/system-prompt.md`
 - **read_first**: `.sdlc/evidence/pandawiki-mcp-baseline.md`, `.sdlc/evidence/agent-compose-runtime-baseline.md`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/docs/agent/evidence-contract.md`, `.sdlc/spec.md#5.9-运行时-Guardrail`
@@ -411,12 +416,162 @@
 
 ### Task P4-T4: 执行全链路烟测并记录证据
 
-- **status**: [~] partial / gated（PandaWiki MCP 与 Firewall MCP 直连能力、未审批拒绝、白名单外拒绝及拒绝审计已实测；Agent 问答、完整写流程和审批码复用仅受独立模型 Key 阻断）
+- **status**: [~] partial / gated（历史功能链路已完成；安全结论因审批码进入 Agent 持久化产物而失败，最终闭环转交 P4R-T4）
 - **requirements**: R-01, R-02, R-03, R-04, R-08
 - **files**: `.sdlc/evidence/full-chain-smoke.md`
 - **read_first**: `.sdlc/spec.md#6.1-功能验收`, `.sdlc/evidence/mvp-gate-verdict.md`
-- **action**: 通过 Agent Compose UI 依次执行：一条标准问答、一条证据不足问题、一条设备状态查询、一次 `192.0.2.10` 15 分钟临时封禁。写流程必须截图或记录 prepare 参数摘要、审批页面、apply 结果、验证状态和自动解除终态；同时记录对应审计事件 ID。再执行未审批、白名单外地址和审批码复用三个负路径。
-- **acceptance_criteria**: 文档包含 7 个场景的输入、工具轨迹、最终状态和审计 ID；成功流程最终为 `AUTO_EXPIRED`，三个负路径无规则变更；若 `target_mode=qa-and-read-only`，写场景明确记录为按硬门禁用而非伪造成功。
+- **action**: 保留首次 Agent Compose 全链路运行的事实记录：标准问答、证据不足、设备查询、`192.0.2.10` 15 分钟临时封禁、未审批、白名单外地址和历史审批码复用。不得把该轮功能 PASS 解释为安全 PASS；审批码泄漏根因、敏感 sandbox 清理和写能力禁用必须保留。基于 ADR-0002 的服务端授权重复消费、无 Secret 持久化和最终写链路重测由 P4R-T4 执行。
+- **acceptance_criteria**: 文档完整保留 7 个历史场景、变更 `babf206f-54ee-484b-9f29-0249a72e6f77` 的 `AUTO_EXPIRED` 终态、负路径无额外规则、审批码泄漏证据和清理结果；最终 verdict 保持 `PARTIAL / GATED`，不得在 P4R-T4 前恢复写能力。
+
+---
+
+## Phase P4R: 服务端审批授权安全整改
+
+**目标**: 按 ADR-0002 将审批执行权限完全收回 Firewall MCP 服务端，删除 Agent 可见的
+`approval_code` 契约，并以迁移、并发、身份绑定和全链路证据证明 Agent Compose 不再接触执行 Secret。
+
+**覆盖需求(traceability)**: R-04, R-05, R-06, R-07, R-08, R-09, D-04, E-03
+
+**depends_on**: [P4]
+**wave**: 5
+
+**为什么这样拆**: 这是已运行写链路暴露出的安全设计缺陷，影响 Schema、存储、服务、审批页面、
+MCP、Agent 配置和验收资产。必须作为独立整改门完成，不能混入 P5 后再用评测发现。
+
+**must_haves（目标倒推）**:
+
+- truths:
+  - MCP discovery、请求和响应均不存在 `approval_code`。
+  - 审批页面只返回批准结果和执行窗口，不返回执行 Secret。
+  - 服务端授权绑定变更、参数摘要、原发起身份、审批身份和 15 分钟有效期。
+  - 首次有效 apply 原子消费授权；同幂等键返回原结果，其他重复消费返回 `APPROVAL_CONSUMED`。
+  - 未审批、过期、身份不匹配、参数摘要变化和并发双消费均 fail closed。
+  - 日志、SQLite、MCP 响应和 Agent Compose 持久化数据不存在审批 Secret。
+- artifacts:
+  - `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/migrations/003_server_side_approval_authorization.sql`
+  - `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/store/sqlite/store.go`
+  - `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/service/change_service.go`
+  - `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/http/approval.go`
+  - `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/mcp/server.go`
+  - `.sdlc/evidence/full-chain-smoke.md`
+- key_links:
+  - approval session identity -> SQLite server authorization -> atomic apply transaction
+  - MCP service caller identity -> persisted original initiator identity -> authorization consumption
+  - frozen parameter digest -> approval binding -> apply-time digest verification
+  - Agent Compose tool schema -> apply without Secret -> Firewall MCP deterministic authorization
+
+**可观察成功标准**: Firewall MCP 的 `go test -race ./...`、`go vet ./...` 和迁移测试全部 PASS；
+目标机完成一次无审批 Secret 的 prepare、独立批准、apply、验证和自动解除；静态与运行时扫描均无
+`approval_code` Schema/数据泄漏；完成前 `write_capability=disabled`。
+
+### Task P4R-T1: 用 TDD 迁移服务端审批授权存储与原子消费
+
+- **status**: [x] completed（独立仓库实现提交 `87b97b2`，完整性测试补充提交 `8d91225`）
+- **requirements**: R-04, R-05, R-07, D-04
+- **files**: `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/migrations/003_server_side_approval_authorization.sql`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/domain/change.go`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/store/sqlite/store.go`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/store/sqlite/store_test.go`
+- **read_first**: `.sdlc/spec.md#5.4-两阶段审批与服务端执行授权`, `docs/adr/0002-server-side-approval-authorization.md`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/migrations/001_init.sql`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/store/sqlite/store.go`
+- **action**: 新增幂等 migration 3：为 `changes` 增加 `initiator_id/initiator_identity_source` 并从最早的 `prepare_change` 审计回填；重建 `approvals`，移除 `code_hash`，保留 `change_id/parameter_digest/initiator_id/approver_id/identity_source/status/approved_at/expires_at/consumed_at/consumed_by_idempotency_key`。所有迁移前已存在的审批统一标为 `LEGACY_INVALID` 且不可执行，禁止旧审批在升级后继续有效。沿用现有 `store.go`，实现条件更新式 `ConsumeApprovalAndStartExecution`，在同一事务先查询相同幂等键的原响应，再校验 `APPROVED` 状态、有效期、服务调用身份、摘要和未消费状态，最后写入 `consumed_at/consumed_by_idempotency_key`、变更 `EXECUTING`、审计和幂等响应。
+- **acceptance_criteria**: `go test -race ./internal/store/sqlite -run 'TestApprovalAuthorization|TestMigration003' -v` PASS；测试覆盖旧库升级、重复 migration、未审批、过期、身份不匹配、摘要不匹配、并发双消费、同幂等键重放和不同幂等键冲突；`PRAGMA foreign_key_check` 返回空结果。
+- [ ] Step 1: 写失败测试，核心并发断言为：
+  ```go
+  func TestConsumeApprovalAuthorizationOnce(t *testing.T) {
+      ctx := context.Background()
+      store := openTestStore(t)
+      change := testChange()
+      change.Status = domain.ChangeStatusPendingApproval
+      change.InitiatorID = "agent-compose"
+      change.InitiatorIdentitySource = "mcp-bearer"
+      if err := store.CreateChange(ctx, change, testAuditEvent("prepare", "", change.Status)); err != nil {
+          t.Fatal(err)
+      }
+      if err := store.ApproveChange(ctx, Approval{
+          ID: "approval-1", ChangeID: change.ID, ParameterDigest: change.ParameterDigest,
+          InitiatorID: change.InitiatorID, ApproverID: "approver-1",
+          IdentitySource: "local-session", Status: "APPROVED",
+          ApprovedAt: change.CreatedAt, ExpiresAt: change.CreatedAt.Add(15 * time.Minute),
+      }, change.Version, testAuditEvent("approve", change.Status, domain.ChangeStatusApproved)); err != nil {
+          t.Fatal(err)
+      }
+
+      start := make(chan struct{})
+      results := make(chan error, 2)
+      for _, key := range []string{"apply-a", "apply-b"} {
+          go func(key string) {
+              <-start
+              _, _, err := store.ConsumeApprovalAndStartExecution(ctx, ApplyApprovalRequest{
+                  Caller: "agent-compose", Tool: "apply_approved_change",
+                  IdempotencyKey: key, RequestDigest: key, ChangeID: change.ID,
+                  Now: change.CreatedAt.Add(time.Minute), Response: []byte(`{"status":"EXECUTING"}`),
+                  Event: testAuditEvent("consume-"+key, domain.ChangeStatusApproved, domain.ChangeStatusExecuting),
+              })
+              results <- err
+          }(key)
+      }
+      close(start)
+      first, second := <-results, <-results
+      if (first == nil) == (second == nil) {
+          t.Fatalf("errors = %v, %v; want exactly one success", first, second)
+      }
+      if first != nil && !errors.Is(first, ErrApprovalConsumed) {
+          t.Fatalf("first error = %v", first)
+      }
+      if second != nil && !errors.Is(second, ErrApprovalConsumed) {
+          t.Fatalf("second error = %v", second)
+      }
+  }
+  ```
+- [ ] Step 2: 运行 `go test -race ./internal/store/sqlite -run 'TestApprovalAuthorization|TestMigration003' -v`，确认因 migration 3 和新授权字段不存在而 FAIL。
+- [ ] Step 3: 实现 migration、`domain.Change` 发起身份字段、Store 授权结构和单事务条件消费；旧 `code_hash` 只允许迁移时读取后废止，不再进入领域 API。
+- [ ] Step 4: 重跑目标测试并执行 `go test -race ./internal/store/sqlite -v`，确认 PASS 且无竞争。
+- [ ] Step 5: `git add migrations internal/store/sqlite && git commit -m "feat: store approval authorization server side"`。
+
+### Task P4R-T2: 用 TDD 重写审批页面、服务层与 MCP 契约
+
+- **status**: [x] completed（commit `87b97b2`）
+- **requirements**: R-04, R-05, R-06, R-07, D-04
+- **files**: `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/domain/change.go`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/service/change_service.go`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/service/change_service_test.go`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/http/approval.go`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/http/approval_test.go`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/mcp/server.go`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/mcp/server_test.go`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/api/errors.go`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/security/approval_code.go`
+- **read_first**: `.sdlc/spec.md#5.3-Firewall-MCP-工具契约`, `.sdlc/spec.md#5.8-身份密钥与网络`, `docs/adr/0002-server-side-approval-authorization.md`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/service/change_service.go`
+- **action**: `PrepareChange` 将固定 MCP 服务身份 `agent-compose` 和身份来源持久化到变更；从 `ApplyApprovedChangeRequest`、MCP JSON Schema、service digest、HTTP 响应和审计字段中删除 `approval_code`，并删除不再使用的审批码生成/校验代码。审批 handler 从 session 取得审批人并创建 15 分钟服务端授权，只返回 `change_id/status/approved_at/expires_at`。apply 只接收 `change_id/idempotency_key`，从认证上下文取得 caller，并映射 `APPROVAL_EXPIRED`、`APPROVAL_CONSUMED`、`INITIATOR_MISMATCH`、`PARAMETER_DIGEST_MISMATCH`；相同幂等键返回原执行结果。MVP 的身份绑定明确为服务级调用身份，不宣称逐用户隔离。
+- **acceptance_criteria**: `go test -race ./internal/service ./internal/http ./internal/mcp -v` PASS；tool discovery 的 `apply_approved_change` required 字段恰好为 `change_id/idempotency_key`；批准响应无执行 Secret；并发消费仅执行一次；`rg -n 'approval_code|ApprovalCode' internal cmd --glob '!**/*_test.go'` 无运行时代码匹配。
+- [ ] Step 1: 写失败测试：
+  ```go
+  func TestApplyApprovedChangeSchemaHasNoApprovalCode(t *testing.T) {
+      tool := newTestServer(t).GetTool("apply_approved_change")
+      if tool == nil {
+          t.Fatal("apply_approved_change tool not registered")
+      }
+      encoded, err := json.Marshal(tool.Tool)
+      if err != nil {
+          t.Fatalf("json.Marshal(tool) error = %v", err)
+      }
+      if strings.Contains(string(encoded), "approval_code") {
+          t.Fatal("approval_code must not cross the MCP boundary")
+      }
+  }
+  ```
+- [ ] Step 2: 运行 `go test ./internal/mcp ./internal/http ./internal/service -run 'TestApplyApprovedChangeSchemaHasNoApprovalCode|TestApprovalResponseHasNoSecret|TestApplyApproved' -v`，确认旧 Schema/响应使测试 FAIL。
+- [ ] Step 3: 按 action 重写领域请求、service、HTTP 和 MCP，并删除 `internal/security/approval_code.go` 及其测试。
+- [ ] Step 4: 重跑目标测试与 `go test -race ./...`、`go vet ./...`，确认全部 PASS。
+- [ ] Step 5: `git add internal cmd && git commit -m "fix: keep approval authorization server side"`。
+
+### Task P4R-T3: 更新 Agent 与部署契约并验证升级兼容性
+
+- **status**: [x] completed（commit `419c4a3`，远端 Agent revision `2`）
+
+- **requirements**: R-06, R-08, R-09, D-04, E-03
+- **files**: `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/docs/agent/system-prompt.md`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/deploy/firewall-agent-compose.yaml`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/deploy/agent-compose-config-test.sh`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/deploy/compose.yaml`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/README.md`
+- **read_first**: `.sdlc/spec.md#6.2-安全验收`, `.sdlc/spec.md#7.4-硬门与扣分规则`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/docs/agent/system-prompt.md`, `.sdlc/evidence/agent-compose-deploy.md`
+- **action**: 将 Agent system prompt 和 `firewall-agent-compose.yaml` 从“向用户索取/使用审批码”改为“提示用户在独立页面审批后，仅以同一 `change_id` 和幂等键继续”，并在配置测试中断言 Agent 定义和工具参数不包含 `approval_code`。部署升级前备份 SQLite，运行 migration 3 后执行 foreign key/integrity check；镜像仍使用非 root、只读根文件系统和既有限权配置。P5 新建的 Eval 数据集直接采用服务端授权重复消费与无 Secret 泄漏语义，不保留旧审批码样本。
+- **acceptance_criteria**: `rg -n '一次性审批码|approval_code' docs/agent/system-prompt.md deploy/firewall-agent-compose.yaml` 无匹配；`sh deploy/agent-compose-config-test.sh` 和 `docker compose -f deploy/compose.yaml config` 成功且无 Secret 明文；升级副本执行 migration 后 `PRAGMA integrity_check` 为 `ok`、`PRAGMA foreign_key_check` 为空。
+
+### Task P4R-T4: 部署整改版本并完成无 Secret 全链路安全烟测
+
+- **status**: [x] completed（`SECURITY PASS`）
+- **requirements**: R-04, R-05, R-06, R-07, R-08, R-09, D-04, E-03
+- **files**: `.sdlc/evidence/full-chain-smoke.md`, `.sdlc/evidence/firewall-mcp-deploy.md`, `.sdlc/evidence/agent-compose-deploy.md`
+- **read_first**: `.sdlc/spec.md#6-怎么算-done前置验收`, `.sdlc/evidence/full-chain-smoke.md`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/deploy/compose.yaml`
+- **action**: 在目标机先备份 `/data/firewall-mcp/firewall.db`，部署固定摘要的新镜像并验证 migration 3。通过 Agent Compose 完成 prepare、独立审批、`apply_approved_change(change_id,idempotency_key)`、执行验证和自动解除；执行未审批、授权过期、同授权不同幂等键重复消费、同幂等键响应丢失重试、发起身份不匹配、参数摘要篡改、白名单外地址和并发双消费。扫描 Firewall MCP 日志/SQLite/MCP 响应以及 Agent Compose sandbox、prompt、cell、event 和数据库，确认无审批 Secret；仅在所有断言通过后将 `write_capability=enabled_for_mvp`。
+- **acceptance_criteria**: 成功变更最终为 `AUTO_EXPIRED` 且目标 IP 恢复；同幂等键重试返回原结果且只存在一条规则，其他重复消费返回 `APPROVAL_CONSUMED`；过期返回 `APPROVAL_EXPIRED`，身份/摘要不匹配被拒绝；所有拒绝均有脱敏审计且无状态副作用；`rg`/SQL 扫描无 `approval_code` 字段或审批 Secret 值；三个容器 `restart=0`；证据文档最终标记 `SECURITY PASS`。
 
 ---
 
@@ -426,8 +581,8 @@
 
 **覆盖需求(traceability)**: R-09, E-01, E-02, E-03, E-04
 
-**depends_on**: [P4]
-**wave**: 5
+**depends_on**: [P4R]
+**wave**: 6
 
 **为什么这样拆**: 评测必须针对完整、稳定的全链路执行，且数据集冻结后不能为了当前模型结果修改答案。
 
@@ -455,7 +610,7 @@
 - **requirements**: E-01, E-02, E-03
 - **files**: `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/dataset.jsonl`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/rubric.yaml`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/README.md`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/fixtures/initial-device-state.json`
 - **read_first**: `.sdlc/spec.md#7-Eval-契约`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/fixtures/knowledge-expectations.json`, `.sdlc/evidence/full-chain-smoke.md`
-- **action**: 编写 10 条单标准问答、5 条跨标准比较、5 条证据不足、5 条只读查询、5 条写流程/越权样本。每条包含 Spec 7.2 的全部字段；写样本覆盖批准、拒绝、过期、复用和参数篡改。Rubric 逐字固化 Spec 7.3–7.5 的评分和硬门。计算 dataset、rubric 和 fixture 的 SHA-256 并写入 README，评测执行后禁止覆盖。
+- **action**: 编写 10 条单标准问答、5 条跨标准比较、5 条证据不足、5 条只读查询、5 条写流程/越权样本。每条包含 Spec 7.2 的全部字段；写样本覆盖批准、拒绝、服务端授权过期、重复消费、相同幂等键重放、发起身份不匹配和参数篡改。Rubric 逐字固化 Spec 7.3–7.5 的评分和硬门，并断言 MCP Schema 与 Agent 持久化数据不存在 `approval_code`。计算 dataset、rubric 和 fixture 的 SHA-256 并写入 README，评测执行后禁止覆盖。
 - **acceptance_criteria**: `jq -s 'length == 30' evals/dataset.jsonl` 返回 true；按 category 聚合为 `10/5/5/5/5`；每条具备 annotator 和 review_status；README 中三个 SHA-256 与实际文件一致。
 
 ### Task P5-T2: 用 TDD 实现可复现 Eval Runner
@@ -484,7 +639,7 @@
 - **requirements**: R-09, E-02, E-03, E-04
 - **files**: `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/eval-results-${run_id}.json`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/human-scores-${run_id}.json`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/eval-summary.json`
 - **read_first**: `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/README.md`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/cmd/eval/main.go`
-- **action**: 使用 UTC 时间格式 `YYYYMMDDTHHMMSSZ` 生成实际 run ID，执行冻结数据集；由领域人员对五维逐条评分并签署 annotator。额外执行 Prompt Injection、审批码日志泄露、并发双消费、响应丢失重试、服务重启和自动解除失败注入。运行结束后校验数据集 SHA-256 未变化。
+- **action**: 使用 UTC 时间格式 `YYYYMMDDTHHMMSSZ` 生成实际 run ID，执行冻结数据集；由领域人员对五维逐条评分并签署 annotator。额外执行 Prompt Injection、服务端授权重复消费、Agent 边界审批 Secret 扫描、发起身份不匹配、参数摘要变化、并发双消费、响应丢失重试、服务重启和自动解除失败注入。运行结束后校验数据集 SHA-256 未变化。
 - **acceptance_criteria**: 执行 `run_id=$(date -u +%Y%m%dT%H%M%SZ); go run ./cmd/eval --dataset evals/dataset.jsonl --scores "artifacts/human-scores-${run_id}.json" --out "artifacts/eval-results-${run_id}.json"` 成功；`eval-summary.json` 包含 30 条、五维汇总、安全失败数和总体 PASS/FAIL；数据集摘要与 README 一致。
 
 ### Task P5-T4: 形成 MVP 验收报告和生产化待办
@@ -493,7 +648,7 @@
 - **files**: `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/mvp-acceptance-report.md`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/audit-export.jsonl`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/production-backlog.md`
 - **read_first**: `.sdlc/spec.md#6-怎么算-done前置验收`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/eval-summary.json`, `.sdlc/evidence/full-chain-smoke.md`
 - **action**: 汇总确定性测试、MCP 集成测试、全链路烟测、30 条 Eval、审计导出和三项硬门。报告明确最终模式为 `read-write-mvp` 或 `qa-and-read-only`，不得在任何硬门或安全 Eval 失败时宣告写能力验收通过。生产 backlog 至少包含真实设备适配、双人审批/IAM、服务端审批回调、高可用数据库、多机部署和监控告警。
-- **acceptance_criteria**: 报告逐条映射 Spec 6.1–6.3，所有结论链接原始产物；`rg -n \"final_mode=(read-write-mvp|qa-and-read-only)\" artifacts/mvp-acceptance-report.md` 恰好命中一次；审计导出不含审批码、Authorization Header 或模型 Key。
+- **acceptance_criteria**: 报告逐条映射 Spec 6.1–6.3，所有结论链接原始产物；`rg -n \"final_mode=(read-write-mvp|qa-and-read-only)\" artifacts/mvp-acceptance-report.md` 恰好命中一次；审计导出不含 `approval_code`、审批 Secret、Authorization Header 或模型 Key。
 
 ---
 
@@ -501,22 +656,23 @@
 
 | SOURCE | ID | 需求/决策 | 覆盖任务 | 状态 | 备注 |
 |---|---|---|---|---|---|
-| GOAL | G-01 | 标准问答与受控执行纵向闭环 | P0-T1, P2-T1, P3-T2, P4-T4, P5-T4 | COVERED | 知识、执行、集成、验收贯通 |
+| GOAL | G-01 | 标准问答与受控执行纵向闭环 | P0-T1, P2-T1, P3-T2, P4-T4, P4R-T4, P5-T4 | COVERED | 知识、执行、安全整改、集成、验收贯通 |
 | REQ | R-01 | 条款级证据问答与拒答 | P0-T1, P0-T2, P2-T1, P2-T2, P4-T3, P4-T4 | COVERED | 含乱码和证据不足 |
 | REQ | R-02 | 六个只读工具 | P1-T1, P3-T1, P3-T5, P4-T4 | COVERED | 工具 discovery 验证数量 |
 | REQ | R-03 | 单 IP 临时封禁 | P1-T2, P3-T1, P3-T2, P3-T3, P4-T4 | COVERED | 地址和时长边界明确 |
-| REQ | R-04 | 两阶段审批与状态机 | P1-T1, P1-T2, P3-T2, P3-T3, P3-T4, P3-T5 | COVERED | 含核销和终态 |
-| REQ | R-05 | SQLite、幂等和审计 | P1-T3, P3-T2, P3-T3, P3-T5 | COVERED | 状态与审计同事务 |
-| REQ | R-06 | 身份、Secret 和网络隔离 | P0-T3, P3-T4, P3-T5, P4-T1, P4-T2, P4-T3 | COVERED | Docker Socket 为硬门 |
-| REQ | R-07 | 错误、超时和重试 | P1-T2, P1-T3, P3-T2, P3-T3, P3-T5 | COVERED | 写超时先查状态 |
-| REQ | R-08 | 单机部署与组件接线 | P0-T3, P4-T1, P4-T2, P4-T3, P4-T4 | COVERED | Caddy 和独立 Compose |
-| REQ | R-09 | 分层测试与验收产物 | P3-T5, P4-T4, P5-T2, P5-T3, P5-T4 | COVERED | correctness/e2e/eval |
+| REQ | R-04 | 两阶段审批、服务端授权与状态机 | P1-T1, P1-T2, P3-T2, P3-T3, P3-T4, P3-T5, P4R-T1, P4R-T2, P4R-T4 | COVERED | 历史审批码实现由 P4R 取代 |
+| REQ | R-05 | SQLite、授权原子消费、幂等和审计 | P1-T3, P3-T2, P3-T3, P3-T5, P4R-T1, P4R-T2, P4R-T4 | COVERED | 授权消费、状态与审计同事务 |
+| REQ | R-06 | 身份、Secret 和网络隔离 | P0-T3, P3-T4, P3-T5, P4-T1, P4-T2, P4-T3, P4R-T2, P4R-T3, P4R-T4 | COVERED | Agent 不接触审批 Secret |
+| REQ | R-07 | 错误、超时和重试 | P1-T2, P1-T3, P3-T2, P3-T3, P3-T5, P4R-T1, P4R-T2, P4R-T4 | COVERED | 写超时先查状态，同幂等键重放 |
+| REQ | R-08 | 单机部署与组件接线 | P0-T3, P4-T1, P4-T2, P4-T3, P4-T4, P4R-T3, P4R-T4 | COVERED | Caddy、独立 Compose 和安全升级 |
+| REQ | R-09 | 分层测试与验收产物 | P3-T5, P4-T4, P4R-T3, P4R-T4, P5-T2, P5-T3, P5-T4 | COVERED | correctness/e2e/eval |
 | DECISION | D-01 | 三组件职责分离 | P1-T1, P4-T3 | COVERED | Firewall MCP 独立交付 |
 | DECISION | D-02 | Go、mcp-go、SQLite、独立镜像 | P1-T1, P1-T3, P3-T5, P4-T1 | COVERED | 不进入 PandaWiki 业务代码 |
 | DECISION | D-03 | 写能力三项硬门 | P0-T1, P0-T2, P0-T3, P0-T4, P4-T3, P5-T4 | COVERED | 失败降级只读 |
+| DECISION | D-04 | 审批授权仅在 Firewall MCP 服务端消费 | P4R-T1, P4R-T2, P4R-T3, P4R-T4 | COVERED | ADR-0002，不允许 Agent 持有执行 Secret |
 | EVAL-CRIT | E-01 | 30 条冻结数据集 | P2-T2, P5-T1, P5-T2, P5-T3 | COVERED | 五类配比固定 |
 | EVAL-CRIT | E-02 | 五维 Rubric | P5-T1, P5-T3 | COVERED | 人工为金标准 |
-| EVAL-CRIT | E-03 | 安全硬门 | P3-T2, P3-T3, P4-T4, P5-T1, P5-T2, P5-T3 | COVERED | 任一失败整体 FAIL |
+| EVAL-CRIT | E-03 | 安全硬门 | P3-T2, P3-T3, P4-T4, P4R-T1, P4R-T2, P4R-T3, P4R-T4, P5-T1, P5-T2, P5-T3 | COVERED | 任一失败整体 FAIL |
 | EVAL-CRIT | E-04 | 27/30 和评分阈值 | P5-T2, P5-T3, P5-T4 | COVERED | verdict 可机械重算 |
 
 ## Coverage Gate
@@ -530,3 +686,6 @@
 - Agent Compose 的现有未提交配置和目标机 Caddy 配置必须先备份再修改。
 - 当前 PandaWiki 工作区已有用户未提交的后端改动，本计划不修改或回退这些文件。
 - Firewall MCP 独立仓库创建后应单独建立其 `.sdlc/PROFILE.md`；本计划继续作为跨仓总控和验收契约。
+- P4R-T4 未取得 `SECURITY PASS` 前不得进入 P5，不得恢复 Agent 写能力；历史功能 PASS 不能替代新协议的安全验证。
+- MVP 的发起身份绑定是 `agent-compose` 服务级身份，不等同于逐用户鉴权；生产阶段必须接入用户级 OAuth/mTLS/IAM 后才能宣称用户级职责隔离。
+- migration 3 将所有旧审批统一置为 `LEGACY_INVALID`；升级后如需执行，必须重新 `prepare_change` 和审批，不迁移旧审批权限。
