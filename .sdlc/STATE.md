@@ -6,7 +6,7 @@ work-type: feature
 branch: feature/firewall-agent-mvp
 worktree: /Users/zhaotong/Documents/chaitin/code/PandaWiki
 source-leaf: (none)
-updated: 2026-08-13T15:15:58+08:00
+updated: 2026-08-13T15:45:33+08:00
 validate-modes: [correctness, e2e:OpenAPI, eval-bench]
 sdlc-gate: P5-dataset
 
@@ -45,7 +45,8 @@ sdlc-gate: P5-dataset
 - [x] build：P4R-T2 审批页面、服务层与 MCP 无 Secret 契约 TDD（Firewall MCP commit `87b97b2`）
 - [x] build：P4R-T3 Agent/部署契约与升级兼容性验证（Firewall MCP commit `419c4a3`，Agent revision `2`）
 - [x] build：P4R-T4 无审批 Secret 全链路安全烟测（`SECURITY PASS`）
-- [ ] build：P5-T1 冻结 30 条参考数据集与 Rubric（等待真实 annotator/reviewer 身份）
+- [~] build：P5-T1 30 条数据集与 Rubric 草案生成并结构校验通过（等待真实 annotator/reviewer 身份）
+- [~] build：P5-T2 Eval 核心加载、轨迹校验、verdict 聚合与 CLI 完成（现场 Agent trace 采集适配待补）
 - [ ] validate：correctness 通过
 - [ ] validate：e2e 通过
 - [ ] validate：eval-bench 通过
@@ -103,6 +104,12 @@ sdlc-gate: P5-dataset
 - `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/deploy/apply-caddy.sh`
 - `.sdlc/evidence/firewall-mcp-deploy.md`
 - `.sdlc/evidence/agent-compose-deploy.md`
+- `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/dataset.jsonl`
+- `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/rubric.yaml`
+- `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/README.md`
+- `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/fixtures/initial-device-state.json`
+- `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/eval/*.go`
+- `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/cmd/eval/main.go`
 - Existing user changes, unrelated to this feature: `backend/config/config.go`, `backend/domain/llm.go`, `backend/repo/pg/prompt.go`, `backend/store/rag/ct.go`, `backend/store/rag/rag.go`, `backend/usecase/chat.go`, `backend/usecase/llm.go` and their untracked tests; do not modify or revert.
 
 ## Decisions log
@@ -243,7 +250,9 @@ sdlc-gate: P5-dataset
 - 2026-08-13 Firewall MCP 服务端审批整改代码已提交为 `87b97b2`、`a50b9f7`、`8d91225`、`419c4a3`，本地工作区 clean；该独立仓库尚无 remote，且 GitHub CLI 未登录，暂不能推送。
 - 2026-08-13 PandaWiki 的 SDLC、Spec、ADR 和 P4R 证据已提交并推送到个人 fork，提交为 `8f34d4b6`；官方 upstream push 保持禁用。
 - 2026-08-13 P5-T1 不能伪造 `annotator/reviewer` 身份或把未人工复核的数据标为 frozen；确认实际标注人与复核人后再生成 30 条冻结集。
+- 2026-08-13 P5-T1 生成 30 条评测数据集草案、Rubric 和初始设备 fixture；`jq` 校验总数 30、类别配比 `10/5/5/5/5`、字段完整性通过。草案保持 `review_status=draft`，等待真实标注/复核身份，未宣称冻结。
+- 2026-08-13 P5-T2 以 TDD 完成 Eval 核心：JSONL 数据集加载、工具调用顺序/禁用工具/参数/终态校验、五维人工分数聚合和安全硬门；`go test -race ./...`、`go build ./...`、`go vet ./...`、`git diff --check` 通过。由于现有证据未定义稳定的 Agent Compose 自动化 API，CLI 当前消费现场 captured trace，不臆造 HTTP 采集协议。Firewall MCP commit `a12da50`。
 
 ## Next action
 
--> confirm real annotator and reviewer identities, then execute P5-T1 and freeze the 30-case eval dataset
+-> confirm real annotator and reviewer identities; then freeze P5-T1 and collect real Agent traces for P5-T3
