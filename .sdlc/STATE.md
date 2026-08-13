@@ -6,7 +6,7 @@ work-type: feature
 branch: feature/firewall-agent-mvp
 worktree: /Users/zhaotong/Documents/chaitin/code/PandaWiki
 source-leaf: (none)
-updated: 2026-08-13T23:18:01+08:00
+updated: 2026-08-13T23:59:59+08:00
 validate-modes: [correctness, e2e:OpenAPI, eval-bench]
 sdlc-gate: P5-dataset
 
@@ -50,7 +50,7 @@ sdlc-gate: P5-dataset
 - [x] build：P5-T1 发起身份不匹配归入 P5-T3 独立确定性对抗用例，不混入 WR-05
 - [x] build：P5-T2 Eval 核心、冻结门、现场权威 trace、fixture reset、失败恢复和受控审批采集完成
 - [x] build：P5-T2 WR-04 现场排练通过（审批消费、执行成功、同键重放、自动解除）；未计入正式 Eval
-- [~] build：P5-T3 正式 30 条 Eval 与人工五维评分；数据集冻结门已通过，待执行
+- [~] build：P5-T3 正式 30 条 Eval 现场采集进行中；25 条非写样本及 WR-01～WR-04 已取得结果，WR-05 因目标机网络中断未取得结果
 - [ ] build：P5-T4 MVP 验收报告与生产化待办
 - [ ] validate：correctness 通过
 - [ ] validate：e2e 通过
@@ -281,7 +281,10 @@ sdlc-gate: P5-dataset
 - 2026-08-13 用户确认 `tong.zhao` 已完成 30 条样本的逐条复核；在真实 reviewer 身份与角色明确并签署前，数据集继续保持 draft，不提前生成冻结清单。
 - 2026-08-13 用户确认由 `tong.zhao` 同时承担标注人与 reviewer 两个 MVP 逻辑角色，角色为“防火墙方案技术负责人”；生产阶段再升级为严格职责分离。
 - 2026-08-13 Firewall MCP Eval 冻结门通过：30 条样本、Rubric、初始 fixture 摘要匹配，`eval-freeze-check` 返回 PASS；冻结清单为 `evals/freeze-review.json`，提交为 `d4d9ad8`。
+- 2026-08-13 P5-T3 正式 run `20260813T152525Z` 已完成 25 条非写样本；`SQA-01` 至 `RO-05` 均成功生成现场采集结果。
+- 2026-08-13 P5-T3 受控写样本 `WR-01`、`WR-03`、`WR-04` 已取得 `AUTO_EXPIRED`、`REJECTED`、`IDEMPOTENT_REPLAY` 结果；`WR-02` 采集流程完成但确定性终态为 `PENDING_APPROVAL`，与冻结期望 `REJECTED` 不一致，待聚合器正式判定。
+- 2026-08-13 `WR-05` 采集启动后，目标机 `10.2.138.74` 的 SSH/TCP 22 与 ICMP 均不可达；结果不可判定，禁止将其计为通过或盲目重试。待网络恢复后按同一 `fixture-run-id` 先执行恢复核验。
 
 ## Next action
 
--> execute P5-T3 formal 30-case Eval, human five-dimensional scoring, and independent initiator-mismatch adversarial test
+-> restore connectivity to `10.2.138.74`; verify `ACTIVE` fixture marker and `WR-05` authoritative artifact, then complete formal Eval, human scoring, and independent initiator-mismatch adversarial test

@@ -638,7 +638,7 @@ MCP、Agent 配置和验收资产。必须作为独立整改门完成，不能�
 
 ### Task P5-T3: 执行评测、人工评分和安全对抗测试
 
-- **status**: [~] P5-T1 dataset freeze passed；待执行正式 30 条 Eval、人工五维评分及独立发起身份不匹配对抗测试；WR-04 仅为现场排练，不计入正式结果
+- **status**: [~] P5-T1 dataset freeze passed；正式 run `20260813T152525Z` 已完成 25 条非写样本及 WR-01～WR-04；WR-05 启动后目标机网络中断，待恢复核验；人工五维评分和独立发起身份不匹配对抗测试尚未执行
 - **requirements**: R-09, E-02, E-03, E-04
 - **files**: `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/eval-results-${run_id}.json`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/human-scores-${run_id}.json`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/adversarial-results-${run_id}.json`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/eval-summary.json`
 - **read_first**: `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/README.md`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/cmd/eval/main.go`

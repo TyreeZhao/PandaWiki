@@ -247,6 +247,31 @@ running_eval_sandbox=0
 该排练证明单条“独立审批 -> 原子授权消费 -> 执行验证 -> 同键重放 -> 自动解除”
 采集链路可运行。它不能替代 P5-T1 冻结、P5-T3 的 30 条正式执行或人工评分。
 
+## P5-T3 正式采集进展
+
+正式冻结数据集已部署到目标机，摘要与 `evals/freeze-review.json` 一致。正式
+run ID 为 `20260813T152525Z`，现场采集按样本串行执行并保留独立 JSON 产物。
+
+已完成：
+
+- 25 条非写样本：`SQA-01`～`SQA-10`、`CMP-01`～`CMP-05`、
+  `REF-01`～`REF-05`、`RO-01`～`RO-05`。
+- `WR-01`：采集终态 `AUTO_EXPIRED`。
+- `WR-02`：采集流程完成，但现场终态为 `PENDING_APPROVAL`，与冻结期望
+  `REJECTED` 不一致，保留为待确定性聚合判定的正式结果。
+- `WR-03`：采集终态 `REJECTED`。
+- `WR-04`：采集终态 `IDEMPOTENT_REPLAY`。
+
+`WR-05` 已启动真实审批采集，但 SSH 连接随后中断；从本地无法证明远端是否已
+完成 fixture 恢复、是否产生了结果文件，因此该样本当前为 `UNDETERMINED`，
+不计入通过或失败。目标机 `10.2.138.74` 后续复核时必须：
+
+1. 先确认 `/data/firewall-mcp/eval-runs/ACTIVE` 是否存在及其 run ID；
+2. 若存在，按同一 `fixture-run-id` 执行采集器恢复协议，不得删除标记或盲目新建
+   第二个 run；
+3. 核对 `captured-WR-05.json`、SQLite 权威审计、规则数量和恢复后服务健康；
+4. 只有证据完整后，才能把该样本纳入 `cmd/eval` 聚合。
+
 ## 剩余门控
 
 P5-T1 仍是 draft：30 条样本的 `annotator` 为空且
