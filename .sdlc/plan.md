@@ -607,12 +607,12 @@ MCP、Agent 配置和验收资产。必须作为独立整改门完成，不能�
 
 ### Task P5-T1: 冻结 30 条参考数据集和 Rubric
 
-- **status**: [~] machine pre-freeze audit completed / waiting for real annotator, reviewer, and initiator-mismatch coverage decision
+- **status**: [~] machine pre-freeze audit completed / waiting for real annotator and reviewer
 - **requirements**: E-01, E-02, E-03
 - **files**: `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/dataset.jsonl`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/rubric.yaml`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/README.md`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/fixtures/initial-device-state.json`
 - **read_first**: `.sdlc/spec.md#7-Eval-契约`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/fixtures/knowledge-expectations.json`, `.sdlc/evidence/full-chain-smoke.md`
-- **action**: 编写 10 条单标准问答、5 条跨标准比较、5 条证据不足、5 条只读查询、5 条写流程/越权样本。每条包含 Spec 7.2 的全部字段；写样本覆盖批准、拒绝、服务端授权过期、重复消费、相同幂等键重放、发起身份不匹配和参数篡改。Rubric 逐字固化 Spec 7.3–7.5 的评分和硬门，并断言 MCP Schema 与 Agent 持久化数据不存在 `approval_code`。计算 dataset、rubric 和 fixture 的 SHA-256 并写入 README，评测执行后禁止覆盖。
-- **acceptance_criteria**: `jq -s 'length == 30' evals/dataset.jsonl` 返回 true；按 category 聚合为 `10/5/5/5/5`；每条具备 annotator 和 review_status；README 中三个 SHA-256 与实际文件一致。当前草案已满足结构、知识引用、工具白名单、受控目标、评分刻度和哈希要求，但 `annotator` 为空、`review_status=draft`，且发起身份不匹配的归属尚待确认，未达到 frozen。预冻结审计见 `.sdlc/evidence/p5-dataset-pre-freeze-audit.md`。
+- **action**: 编写 10 条单标准问答、5 条跨标准比较、5 条证据不足、5 条只读查询、5 条写流程/越权样本。每条包含 Spec 7.2 的全部字段；写样本覆盖批准、拒绝、服务端授权过期、重复消费、相同幂等键重放和参数篡改。发起身份不匹配不混入 `WR-05`，由 P5-T3 使用独立攻击客户端和不同认证上下文执行确定性对抗测试。Rubric 逐字固化 Spec 7.3–7.5 的评分和硬门，并断言 MCP Schema 与 Agent 持久化数据不存在 `approval_code`。计算 dataset、rubric 和 fixture 的 SHA-256 并写入 README，评测执行后禁止覆盖。
+- **acceptance_criteria**: `jq -s 'length == 30' evals/dataset.jsonl` 返回 true；按 category 聚合为 `10/5/5/5/5`；每条具备 annotator 和 review_status；README 中三个 SHA-256 与实际文件一致。当前草案已满足结构、知识引用、工具白名单、受控目标、评分刻度和哈希要求，但 `annotator` 为空、`review_status=draft`，尚未达到 frozen。发起身份不匹配已明确归入 P5-T3 独立对抗测试。预冻结审计见 `.sdlc/evidence/p5-dataset-pre-freeze-audit.md`。
 
 ### Task P5-T2: 用 TDD 实现可复现 Eval Runner
 
@@ -640,10 +640,10 @@ MCP、Agent 配置和验收资产。必须作为独立整改门完成，不能�
 
 - **status**: [ ] gated by P5-T1 dataset freeze；WR-04 仅为现场排练，不计入正式结果
 - **requirements**: R-09, E-02, E-03, E-04
-- **files**: `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/eval-results-${run_id}.json`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/human-scores-${run_id}.json`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/eval-summary.json`
+- **files**: `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/eval-results-${run_id}.json`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/human-scores-${run_id}.json`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/adversarial-results-${run_id}.json`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/eval-summary.json`
 - **read_first**: `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/README.md`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/cmd/eval/main.go`
-- **action**: 使用 UTC 时间格式 `YYYYMMDDTHHMMSSZ` 生成实际 run ID，执行冻结数据集；由领域人员对五维逐条评分并签署 annotator。额外执行 Prompt Injection、服务端授权重复消费、Agent 边界审批 Secret 扫描、发起身份不匹配、参数摘要变化、并发双消费、响应丢失重试、服务重启和自动解除失败注入。运行结束后校验数据集 SHA-256 未变化。
-- **acceptance_criteria**: 执行 `run_id=$(date -u +%Y%m%dT%H%M%SZ); go run ./cmd/eval --dataset evals/dataset.jsonl --scores "artifacts/human-scores-${run_id}.json" --out "artifacts/eval-results-${run_id}.json"` 成功；`eval-summary.json` 包含 30 条、五维汇总、安全失败数和总体 PASS/FAIL；数据集摘要与 README 一致。
+- **action**: 使用 UTC 时间格式 `YYYYMMDDTHHMMSSZ` 生成实际 run ID，执行冻结数据集；由领域人员对五维逐条评分并签署 annotator。额外执行 Prompt Injection、服务端授权重复消费、Agent 边界审批 Secret 扫描、发起身份不匹配、参数摘要变化、并发双消费、响应丢失重试、服务重启和自动解除失败注入。发起身份不匹配必须由独立攻击客户端使用不同于原发起人的认证上下文调用同一 `change_id`，断言请求被稳定拒绝、授权未消费、规则和配置版本不变，并把认证来源与拒绝审计写入独立对抗结果。运行结束后校验数据集 SHA-256 未变化。
+- **acceptance_criteria**: 执行 `run_id=$(date -u +%Y%m%dT%H%M%SZ); go run ./cmd/eval --dataset evals/dataset.jsonl --scores "artifacts/human-scores-${run_id}.json" --out "artifacts/eval-results-${run_id}.json"` 成功；`eval-summary.json` 包含 30 条、五维汇总、安全失败数和总体 PASS/FAIL；`adversarial-results-${run_id}.json` 包含发起身份不匹配用例的请求身份、拒绝错误码、审计事件和前后状态摘要，且证明无授权消费或设备副作用；数据集摘要与 README 一致。
 
 ### Task P5-T4: 形成 MVP 验收报告和生产化待办
 
