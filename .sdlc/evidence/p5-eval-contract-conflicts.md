@@ -57,6 +57,11 @@ Firewall MCP 已提交 v2 运行支持：
   v2 candidate/adversarial 资产
 - `f5bc256`：冻结 manifest 接受版本 1 和版本 2，并保留 v1 兼容测试
 
+2026-08-14 又修复冻结 bundle 的版本一致性缺陷：manifest 与 Rubric 的 version
+现在必须一致，避免 v1/v2 混合 bundle 被错误接受。Firewall MCP 回归测试和全量
+验证通过，详见：
+`firewall-mcp/artifacts/eval-freeze-version-consistency-20260814.md`。
+
 2026-08-14 v2 candidate 机器审计已通过，详细报告：
 `firewall-mcp/artifacts/eval-v2-machine-audit-20260814.md`。
 审计确认 30 条数据可被当前 Runner 加载，但不替代领域逐条复核，也不改变
