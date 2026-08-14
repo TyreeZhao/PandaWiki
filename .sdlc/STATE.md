@@ -6,7 +6,7 @@ work-type: feature
 branch: feature/firewall-agent-mvp
 worktree: /Users/zhaotong/Documents/chaitin/code/PandaWiki
 source-leaf: (none)
-updated: 2026-08-14T12:07:52+08:00
+updated: 2026-08-14T13:38:54+08:00
 validate-modes: [correctness, e2e:OpenAPI, eval-bench]
 sdlc-gate: P5-eval-v2-freeze
 
@@ -124,6 +124,9 @@ sdlc-gate: P5-eval-v2-freeze
 - `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/cmd/eval-capture/main.go`
 - `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/cmd/audit-export/main.go`
 - `.sdlc/evidence/p5-eval-capture-and-mcp-log-hardening.md`
+- `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/candidates/v2/review-checklist.md`
+- `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/candidates/v2/freeze-review.example.json`
+- `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/eval-v2-review-kit-20260814.md`
 - Existing user changes, unrelated to this feature: `backend/config/config.go`, `backend/domain/llm.go`, `backend/repo/pg/prompt.go`, `backend/store/rag/ct.go`, `backend/store/rag/rag.go`, `backend/usecase/chat.go`, `backend/usecase/llm.go` and their untracked tests; do not modify or revert.
 
 ## Decisions log
@@ -297,6 +300,7 @@ sdlc-gate: P5-eval-v2-freeze
 - 2026-08-14 Firewall MCP 完成 `required_tools`、`allowed_extra_tools`、Agent 拒绝篡改场景及 v2 freeze manifest 版本支持；完整 race/build/vet/diff check 通过。该实现不改变 v2 candidate 的 draft/pending 状态。
 - 2026-08-14 发现并修复 manifest/Rubric version 不一致仍可通过冻结门的问题；现在要求版本严格一致，v2 candidate 仍保持 draft/pending。
 - 2026-08-14 已准备 v2 领域复核包：README 检查命令已修正，新增 30/30 样本复核清单和未签署 manifest 模板；candidate 加载测试、race、vet 通过，未签署模板的冻结门按预期拒绝。详细证据为 `firewall-mcp/artifacts/eval-v2-review-kit-20260814.md`。未创建 v2 release、未生成正式 manifest、未伪造 reviewer 或人工评分。
+- 2026-08-14 Firewall MCP 复核包已提交为 `dc4f4f7`；本仓库同步提交为 `18b3891a` 并已推送个人 fork。upstream push 仍禁用。
 
 ## Next action
 
