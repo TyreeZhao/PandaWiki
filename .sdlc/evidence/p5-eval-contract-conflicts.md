@@ -1,7 +1,7 @@
 # P5 Eval v1 契约冲突与 v2 修订决策
 
 日期：2026-08-14
-状态：Spec amendment 已批准；v2 尚未重冻
+状态：Spec amendment 已批准；v2 candidate 已生成，尚未重冻
 
 ## 正式结果边界
 
@@ -45,6 +45,14 @@ v1 是一次有效的失败评测，不能因发现数据契约问题而覆盖�
 6. v2 重冻后必须完整重跑 30 条，并由 `tong.zhao` 真实填写 30×5 的 1/3/5 分；
    不得复用 v1 的空评分形成通过结论。
 
+当前 Firewall MCP 工作区已生成：
+
+- `evals/releases/v1/`：v1 不可变 release 副本
+- `evals/candidates/v2/`：待逐条复核的 v2 candidate
+- `evals/adversarial/v2/`：服务端攻击用例契约草案
+
+v2 candidate 的样本和 Rubric 仍为 draft/pending，冻结检查按预期失败；这不是
+错误，而是防止未经真实复核误标 frozen 的门控证据。
+
 Firewall MCP 侧详细审计：
 `artifacts/eval-contract-conflicts-20260814.md`。
-

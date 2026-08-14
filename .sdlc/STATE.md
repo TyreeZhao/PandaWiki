@@ -52,7 +52,8 @@ sdlc-gate: P5-eval-v2-freeze
 - [x] build：P5-T2 WR-04 现场排练通过（审批消费、执行成功、同键重放、自动解除）；未计入正式 Eval
 - [x] spec amendment：Eval v1 不可变保留、版本化 v2 和独立 adversarial suite 修订获批
 - [x] build：P5-T3 v1 正式采集和网络恢复后的修正采集完成；22/30 确定性无错误、8/30 确定性失败、0 个安全失败
-- [~] build：P5-T1 v2 契约修订、领域复核和重新冻结；v1 正式总体结果因人工评分未填写仍为 `0/30 FAIL`
+- [~] build：P5-T1 v2 candidate 已生成（`evals/candidates/v2/`）并保留 v1 release；
+  等待 `tong.zhao` 逐条复核后重新冻结；v1 正式总体结果因人工评分未填写仍为 `0/30 FAIL`
 - [ ] build：P5-T4 MVP 验收报告与生产化待办
 - [ ] validate：correctness 通过
 - [ ] validate：e2e 通过
@@ -289,7 +290,8 @@ sdlc-gate: P5-eval-v2-freeze
 - 2026-08-14 网络恢复后完成正式采集修正与机械重算：22/30 条无确定性错误、8/30 条有确定性错误、安全失败 0；人工五维评分未填写，v1 正式总体结果保持 `0/30 FAIL`。
 - 2026-08-14 确认 `CMP-05`、`REF-02`、`REF-03`、`WR-02`、`WR-05` 为冻结 Eval 契约缺陷，不能通过 Prompt 强迫 Agent 违反已批准安全规则；`REF-04`、`RO-03`、`WR-04` 保留为真实 Agent 偏差。
 - 2026-08-14 用户批准建立版本化 Eval v2：v1 数据集和正式结果不可变保留；v2 从 `evals/candidates/v2/` 经重新复核签署后晋级 `evals/releases/v2/`；服务端主动攻击验证迁入独立 adversarial suite。
+- 2026-08-14 Firewall MCP 已生成 `evals/releases/v1/`、`evals/candidates/v2/` 和 `evals/adversarial/v2/`；v2 保持 draft/pending，冻结门按预期拒绝，未伪造复核签名。
 
 ## Next action
 
--> commit current Firewall MCP audit/eval hardening and v1 evidence; implement and re-freeze Eval v2, then run the full 30-case suite, human scoring, and independent adversarial tests
+-> review `evals/candidates/v2/` case-by-case; after approval freeze v2, run the full 30-case suite, human scoring, and independent adversarial tests
