@@ -83,5 +83,15 @@ README 原先给出的 candidate 检查命令缺少 `cmd/eval` 必填参数，�
 `cmd/eval-freeze-check` 预期失败命令。复核包准备不等于领域批准；当前仍未创建
 `evals/releases/v2/`，未生成正式 v2 manifest。
 
+2026-08-14 `tong.zhao` 已确认完成 v2 30 条逐项复核，正式 release 已冻结：
+
+- `firewall-mcp/evals/releases/v2/`：v2 不可变 release 副本
+- `firewall-mcp/artifacts/eval-v2-freeze-20260814.md`：冻结摘要和验证证据
+- `firewall-mcp` 冻结门：`PASS`
+
+candidate 目录仍保留 `draft/pending`，作为 staging 输入；只有 release 目录使用
+`frozen/approved`。曾短暂将 candidate 改为 frozen，导致 candidate loader 测试按
+契约失败，已恢复并重新生成 release，避免 candidate 与 release 职责漂移。
+
 Firewall MCP 侧详细审计：
 `artifacts/eval-contract-conflicts-20260814.md`。

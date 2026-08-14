@@ -6,7 +6,7 @@ work-type: feature
 branch: feature/firewall-agent-mvp
 worktree: /Users/zhaotong/Documents/chaitin/code/PandaWiki
 source-leaf: (none)
-updated: 2026-08-14T13:38:54+08:00
+updated: 2026-08-14T13:52:06+08:00
 validate-modes: [correctness, e2e:OpenAPI, eval-bench]
 sdlc-gate: P5-eval-v2-freeze
 
@@ -52,8 +52,9 @@ sdlc-gate: P5-eval-v2-freeze
 - [x] build：P5-T2 WR-04 现场排练通过（审批消费、执行成功、同键重放、自动解除）；未计入正式 Eval
 - [x] spec amendment：Eval v1 不可变保留、版本化 v2 和独立 adversarial suite 修订获批
 - [x] build：P5-T3 v1 正式采集和网络恢复后的修正采集完成；22/30 确定性无错误、8/30 确定性失败、0 个安全失败
-- [~] build：P5-T1 v2 candidate 已生成（`evals/candidates/v2/`）并保留 v1 release；
-  等待 `tong.zhao` 逐条复核后重新冻结；v1 正式总体结果因人工评分未填写仍为 `0/30 FAIL`
+- [x] build：P5-T1 v2 candidate 已由 `tong.zhao` 逐条复核并冻结到
+  `evals/releases/v2/`；candidate 保留 draft staging 状态；v1 正式总体结果因人工评分
+  未填写仍为 `0/30 FAIL`
 - [x] build：Eval v2 工具契约与版本化冻结 manifest 支持完成（Firewall MCP commits `1227b40`, `f5bc256`）；v1 兼容测试和 v2 draft 冻结拒绝测试通过
 - [x] build：Eval v2 candidate 机器审计完成；30 条、分类配比、工具集合、知识引用、测试网段和敏感信息检查通过
 - [x] build：修复 Eval freeze manifest/Rubric 版本混用缺陷；v1/v2 冻结测试、race/build/vet/diff check 通过
@@ -127,6 +128,8 @@ sdlc-gate: P5-eval-v2-freeze
 - `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/candidates/v2/review-checklist.md`
 - `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/candidates/v2/freeze-review.example.json`
 - `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/eval-v2-review-kit-20260814.md`
+- `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/releases/v2/*`
+- `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/eval-v2-freeze-20260814.md`
 - Existing user changes, unrelated to this feature: `backend/config/config.go`, `backend/domain/llm.go`, `backend/repo/pg/prompt.go`, `backend/store/rag/ct.go`, `backend/store/rag/rag.go`, `backend/usecase/chat.go`, `backend/usecase/llm.go` and their untracked tests; do not modify or revert.
 
 ## Decisions log
@@ -301,7 +304,8 @@ sdlc-gate: P5-eval-v2-freeze
 - 2026-08-14 发现并修复 manifest/Rubric version 不一致仍可通过冻结门的问题；现在要求版本严格一致，v2 candidate 仍保持 draft/pending。
 - 2026-08-14 已准备 v2 领域复核包：README 检查命令已修正，新增 30/30 样本复核清单和未签署 manifest 模板；candidate 加载测试、race、vet 通过，未签署模板的冻结门按预期拒绝。详细证据为 `firewall-mcp/artifacts/eval-v2-review-kit-20260814.md`。未创建 v2 release、未生成正式 manifest、未伪造 reviewer 或人工评分。
 - 2026-08-14 Firewall MCP 复核包已提交为 `dc4f4f7`；本仓库同步提交为 `18b3891a` 并已推送个人 fork。upstream push 仍禁用。
+- 2026-08-14 `tong.zhao` 确认 v2 30 条逐项复核通过；正式 release 冻结门 PASS，candidate 保留 `draft/pending`，release 使用 `frozen/approved`。冻结证据为 `firewall-mcp/artifacts/eval-v2-freeze-20260814.md`，下一步进入 P5-T3 正式 30 条 Eval。
 
 ## Next action
 
--> `tong.zhao` review `evals/candidates/v2/review-checklist.md` case-by-case; after explicit approval update the v2 reviewer manifest and freeze, then run the full 30-case suite, human scoring, and independent adversarial tests
+-> invoke P5-T3: run the frozen v2 30-case Eval, collect human five-dimension scores, then run the independent adversarial suite
