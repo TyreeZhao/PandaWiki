@@ -648,15 +648,26 @@ MCP、Agent 配置和验收资产。必须作为独立整改门完成，不能�
 
 ### Task P5-T3: 执行评测、人工评分和安全对抗测试
 
-- **status**: [~] v1 正式 run `20260813T152525Z` 与修正 run
-  `20260814T030944Z` 已完成；机械重算为 22/30 确定性无错误、8/30 确定性失败、
-  0 个安全失败。人工评分未填写，因此正式结果仍为 `0/30 FAIL`。待 v2 重冻后完整
-  重跑 30 条，并执行独立 adversarial suite
+- **status**: [~] partial / gated。v1 正式结果保持不可变；v2 正式 run
+  `20260814T055704Z` 已完整采集 30 条。修复空 `request_arguments_json={}` 阻断
+  权威审计字段回退的 Eval trace 缺陷后，使用原 captured 证据机械重算为
+  27/30 确定性无错误、3/30 确定性失败、0 个安全失败。人工五维评分仍未填写，
+  因此正式总体结果仍为 `0/30 FAIL`；`evals/adversarial/v2/` 目前只有 draft
+  契约，尚缺可执行独立攻击客户端和正式结果。
 - **requirements**: R-09, E-02, E-03, E-04
 - **files**: `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/eval-results-${run_id}.json`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/human-scores-${run_id}.json`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/adversarial-results-${run_id}.json`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/eval-summary.json`
 - **read_first**: `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/README.md`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/cmd/eval/main.go`
 - **action**: 使用 UTC 时间格式 `YYYYMMDDTHHMMSSZ` 生成实际 run ID，执行冻结数据集；由领域人员对五维逐条评分并签署 annotator。额外执行 Prompt Injection、服务端授权重复消费、Agent 边界审批 Secret 扫描、发起身份不匹配、参数摘要变化、并发双消费、响应丢失重试、服务重启和自动解除失败注入。发起身份不匹配必须由独立攻击客户端使用不同于原发起人的认证上下文调用同一 `change_id`，断言请求被稳定拒绝、授权未消费、规则和配置版本不变，并把认证来源与拒绝审计写入独立对抗结果。运行结束后校验数据集 SHA-256 未变化。
 - **acceptance_criteria**: 执行 `run_id=$(date -u +%Y%m%dT%H%M%SZ); go run ./cmd/eval --dataset evals/dataset.jsonl --scores "artifacts/human-scores-${run_id}.json" --out "artifacts/eval-results-${run_id}.json"` 成功；`eval-summary.json` 包含 30 条、五维汇总、安全失败数和总体 PASS/FAIL；`adversarial-results-${run_id}.json` 包含发起身份不匹配用例的请求身份、拒绝错误码、审计事件和前后状态摘要，且证明无授权消费或设备副作用；数据集摘要与 README 一致。
+- [x] v2 正式 30 条现场采集完成，原始合并产物 SHA-256 为
+  `f384499ddb85221bb8ebe3a0af359f4014dd02619923c4112b2f4d815cd30d19`。
+- [x] Eval trace 空参数回退缺陷按 RED→GREEN 修复；原 captured 证据重算后
+  机械结果为 27/30，剩余真实失败为 `REF-02`、`RO-03`、`WR-02`；
+  Firewall MCP commit `720f14f`。
+- [x] 数据集、Rubric 和 fixture SHA-256 与冻结 manifest 一致；目标机恢复后
+  Firewall MCP healthy、Agent Compose running、restart 均为 0，且无 `ACTIVE` 标记。
+- [ ] `tong.zhao` 完成 30×5 维真实 `1/3/5` 人工评分并签署。
+- [ ] 实现并执行独立 adversarial v2 suite，生成脱敏正式结果。
 
 ### Task P5-T4: 形成 MVP 验收报告和生产化待办
 

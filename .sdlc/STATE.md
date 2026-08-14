@@ -6,9 +6,9 @@ work-type: feature
 branch: feature/firewall-agent-mvp
 worktree: /Users/zhaotong/Documents/chaitin/code/PandaWiki
 source-leaf: (none)
-updated: 2026-08-14T13:52:06+08:00
+updated: 2026-08-14T15:36:45+08:00
 validate-modes: [correctness, e2e:OpenAPI, eval-bench]
-sdlc-gate: P5-eval-v2-freeze
+sdlc-gate: P5-human-scoring-and-adversarial-v2
 
 ## Gates passed
 
@@ -58,6 +58,10 @@ sdlc-gate: P5-eval-v2-freeze
 - [x] build：Eval v2 工具契约与版本化冻结 manifest 支持完成（Firewall MCP commits `1227b40`, `f5bc256`）；v1 兼容测试和 v2 draft 冻结拒绝测试通过
 - [x] build：Eval v2 candidate 机器审计完成；30 条、分类配比、工具集合、知识引用、测试网段和敏感信息检查通过
 - [x] build：修复 Eval freeze manifest/Rubric 版本混用缺陷；v1/v2 冻结测试、race/build/vet/diff check 通过
+- [x] build：P5-T3 v2 正式 run `20260814T055704Z` 完成 30 条现场采集；fixture 恢复后服务健康且无活动标记
+- [x] build：修复 Eval 空 `request_arguments_json={}` 阻断权威审计字段回退的 trace 缺陷；原始 captured 证据机械重算为 27/30、3 条真实失败、0 安全失败（Firewall MCP commit `720f14f`）
+- [ ] build：P5-T3 `tong.zhao` 完成 30×5 维真实人工评分
+- [ ] build：P5-T3 独立 adversarial v2 suite 实现并执行
 - [ ] build：P5-T4 MVP 验收报告与生产化待办
 - [ ] validate：correctness 通过
 - [ ] validate：e2e 通过
@@ -130,6 +134,14 @@ sdlc-gate: P5-eval-v2-freeze
 - `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/eval-v2-review-kit-20260814.md`
 - `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/releases/v2/*`
 - `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/eval-v2-freeze-20260814.md`
+- `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/eval/audit.go`
+- `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/eval/audit_test.go`
+- `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/eval/runner.go`
+- `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/internal/eval/runner_test.go`
+- `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/captured-results-v2-20260814T055704Z.json`
+- `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/eval-results-v2-20260814T055704Z.json`
+- `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/eval-summary-v2-20260814T055704Z.json`
+- `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/eval-v2-run-20260814T055704Z.md`
 - Existing user changes, unrelated to this feature: `backend/config/config.go`, `backend/domain/llm.go`, `backend/repo/pg/prompt.go`, `backend/store/rag/ct.go`, `backend/store/rag/rag.go`, `backend/usecase/chat.go`, `backend/usecase/llm.go` and their untracked tests; do not modify or revert.
 
 ## Decisions log
@@ -305,7 +317,13 @@ sdlc-gate: P5-eval-v2-freeze
 - 2026-08-14 已准备 v2 领域复核包：README 检查命令已修正，新增 30/30 样本复核清单和未签署 manifest 模板；candidate 加载测试、race、vet 通过，未签署模板的冻结门按预期拒绝。详细证据为 `firewall-mcp/artifacts/eval-v2-review-kit-20260814.md`。未创建 v2 release、未生成正式 manifest、未伪造 reviewer 或人工评分。
 - 2026-08-14 Firewall MCP 复核包已提交为 `dc4f4f7`；本仓库同步提交为 `18b3891a` 并已推送个人 fork。upstream push 仍禁用。
 - 2026-08-14 `tong.zhao` 确认 v2 30 条逐项复核通过；正式 release 冻结门 PASS，candidate 保留 `draft/pending`，release 使用 `frozen/approved`。冻结证据为 `firewall-mcp/artifacts/eval-v2-freeze-20260814.md`，下一步进入 P5-T3 正式 30 条 Eval。
+- 2026-08-14 用户复核确认 v2 冻结内容，`P5-eval-v2-freeze` 闸口解除。
+- 2026-08-14 v2 正式 run `20260814T055704Z` 完成 30 条现场采集；原始合并 captured SHA-256 为 `f384499ddb85221bb8ebe3a0af359f4014dd02619923c4112b2f4d815cd30d19`，恢复后 Firewall MCP healthy、Agent Compose running、restart 均为 0 且无 `ACTIVE` 标记。
+- 2026-08-14 复核定位四条写样本参数失败为 Eval trace 还原代码 bug：合法空对象 `{}` 提前阻断权威审计字段回退。回归测试先 RED 后 GREEN，评测器改为从只追加审计重建 Firewall 工具轨迹，不修改冻结 v2 或原始 captured 证据。
+- 2026-08-14 原 captured 证据复算为 27/30 条无确定性错误、3/30 条真实 Agent 偏差（`REF-02`、`RO-03`、`WR-02`）、0 个安全失败；人工评分仍未填写，正式总体结果保持 `0/30 FAIL`。
+- 2026-08-14 Eval trace 修复、30 条正式 captured、复算结果和证据文档已提交到 Firewall MCP 本地仓库，commit `720f14f`；该独立仓库仍无 remote。
+- 2026-08-14 `evals/adversarial/v2/` 仍只有 draft 用例契约，没有可执行独立攻击客户端；P5-T3 保持 gated，不进入 P5-T4。
 
 ## Next action
 
--> invoke P5-T3: run the frozen v2 30-case Eval, collect human five-dimension scores, then run the independent adversarial suite
+-> invoke P5-T3: collect signed 30x5 human scores from tong.zhao and implement/run the independent adversarial v2 suite
