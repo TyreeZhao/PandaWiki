@@ -6,9 +6,9 @@ work-type: feature
 branch: feature/firewall-agent-mvp
 worktree: /Users/zhaotong/Documents/chaitin/code/PandaWiki
 source-leaf: (none)
-updated: 2026-08-14T15:36:45+08:00
+updated: 2026-08-14T16:16:58+08:00
 validate-modes: [correctness, e2e:OpenAPI, eval-bench]
-sdlc-gate: P5-human-scoring-and-adversarial-v2
+sdlc-gate: P5-license-reauthorization-human-test
 
 ## Gates passed
 
@@ -60,6 +60,9 @@ sdlc-gate: P5-human-scoring-and-adversarial-v2
 - [x] build：修复 Eval freeze manifest/Rubric 版本混用缺陷；v1/v2 冻结测试、race/build/vet/diff check 通过
 - [x] build：P5-T3 v2 正式 run `20260814T055704Z` 完成 30 条现场采集；fixture 恢复后服务健康且无活动标记
 - [x] build：修复 Eval 空 `request_arguments_json={}` 阻断权威审计字段回退的 trace 缺陷；原始 captured 证据机械重算为 27/30、3 条真实失败、0 安全失败（Firewall MCP commit `720f14f`）
+- [x] ship：Firewall MCP 最新提交 `720f14f` 已构建 amd64 镜像并部署；容器 healthy、restart=0、SQLite 已备份、只读 Agent 烟测通过
+- [x] ship：Agent Compose 保持 `v2608.3.0-mvp-docker`，实际无宿主机 Docker Socket，DinD 和 UI/审批鉴权入口烟测通过
+- [ ] build：PandaWiki license 重新授权并完成 PandaWiki MCP 知识检索复测
 - [ ] build：P5-T3 `tong.zhao` 完成 30×5 维真实人工评分
 - [ ] build：P5-T3 独立 adversarial v2 suite 实现并执行
 - [ ] build：P5-T4 MVP 验收报告与生产化待办
@@ -142,6 +145,7 @@ sdlc-gate: P5-human-scoring-and-adversarial-v2
 - `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/eval-results-v2-20260814T055704Z.json`
 - `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/eval-summary-v2-20260814T055704Z.json`
 - `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/eval-v2-run-20260814T055704Z.md`
+- `.sdlc/evidence/latest-deploy-20260814.md`
 - Existing user changes, unrelated to this feature: `backend/config/config.go`, `backend/domain/llm.go`, `backend/repo/pg/prompt.go`, `backend/store/rag/ct.go`, `backend/store/rag/rag.go`, `backend/usecase/chat.go`, `backend/usecase/llm.go` and their untracked tests; do not modify or revert.
 
 ## Decisions log
@@ -323,7 +327,9 @@ sdlc-gate: P5-human-scoring-and-adversarial-v2
 - 2026-08-14 原 captured 证据复算为 27/30 条无确定性错误、3/30 条真实 Agent 偏差（`REF-02`、`RO-03`、`WR-02`）、0 个安全失败；人工评分仍未填写，正式总体结果保持 `0/30 FAIL`。
 - 2026-08-14 Eval trace 修复、30 条正式 captured、复算结果和证据文档已提交到 Firewall MCP 本地仓库，commit `720f14f`；该独立仓库仍无 remote。
 - 2026-08-14 `evals/adversarial/v2/` 仍只有 draft 用例契约，没有可执行独立攻击客户端；P5-T3 保持 gated，不进入 P5-T4。
+- 2026-08-14 用户手动吊销 PandaWiki license；本次未把未提交 PandaWiki 后端改动带入部署。Firewall MCP 已用 `720f14f` 重建 amd64 镜像 `sha256:16a547cf...` 部署，Agent Compose 保持 `v2608.3.0-mvp-docker`。
+- 2026-08-14 部署后 Firewall MCP healthy、Agent Compose running、只读 Agent 查询成功，设备 `healthy=true/config_version=0`，UI 返回 200，未认证审批页返回 401；当前具备受控人工 QA/UAT 条件，等待重新授权后补知识问答链路。
 
 ## Next action
 
--> invoke P5-T3: collect signed 30x5 human scores from tong.zhao and implement/run the independent adversarial v2 suite
+-> await PandaWiki license reauthorization, then run PandaWiki MCP knowledge smoke and controlled human QA/UAT; separately collect signed 30x5 scores and implement/run adversarial v2
