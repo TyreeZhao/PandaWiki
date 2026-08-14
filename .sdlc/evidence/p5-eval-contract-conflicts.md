@@ -57,6 +57,11 @@ Firewall MCP 已提交 v2 运行支持：
   v2 candidate/adversarial 资产
 - `f5bc256`：冻结 manifest 接受版本 1 和版本 2，并保留 v1 兼容测试
 
+2026-08-14 v2 candidate 机器审计已通过，详细报告：
+`firewall-mcp/artifacts/eval-v2-machine-audit-20260814.md`。
+审计确认 30 条数据可被当前 Runner 加载，但不替代领域逐条复核，也不改变
+candidate 的 `draft/pending` 状态。
+
 v2 candidate 的样本和 Rubric 仍为 draft/pending，冻结检查按预期失败；这不是
 错误，而是防止未经真实复核误标 frozen 的门控证据。
 

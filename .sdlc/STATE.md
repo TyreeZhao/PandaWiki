@@ -55,6 +55,7 @@ sdlc-gate: P5-eval-v2-freeze
 - [~] build：P5-T1 v2 candidate 已生成（`evals/candidates/v2/`）并保留 v1 release；
   等待 `tong.zhao` 逐条复核后重新冻结；v1 正式总体结果因人工评分未填写仍为 `0/30 FAIL`
 - [x] build：Eval v2 工具契约与版本化冻结 manifest 支持完成（Firewall MCP commits `1227b40`, `f5bc256`）；v1 兼容测试和 v2 draft 冻结拒绝测试通过
+- [x] build：Eval v2 candidate 机器审计完成；30 条、分类配比、工具集合、知识引用、测试网段和敏感信息检查通过
 - [ ] build：P5-T4 MVP 验收报告与生产化待办
 - [ ] validate：correctness 通过
 - [ ] validate：e2e 通过
