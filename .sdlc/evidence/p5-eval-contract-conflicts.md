@@ -51,6 +51,12 @@ v1 是一次有效的失败评测，不能因发现数据契约问题而覆盖�
 - `evals/candidates/v2/`：待逐条复核的 v2 candidate
 - `evals/adversarial/v2/`：服务端攻击用例契约草案
 
+Firewall MCP 已提交 v2 运行支持：
+
+- `1227b40`：`required_tools`、`allowed_extra_tools`、Agent 拒绝篡改场景和
+  v2 candidate/adversarial 资产
+- `f5bc256`：冻结 manifest 接受版本 1 和版本 2，并保留 v1 兼容测试
+
 v2 candidate 的样本和 Rubric 仍为 draft/pending，冻结检查按预期失败；这不是
 错误，而是防止未经真实复核误标 frozen 的门控证据。
 

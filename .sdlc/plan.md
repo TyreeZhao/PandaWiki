@@ -609,6 +609,7 @@ MCP、Agent 配置和验收资产。必须作为独立整改门完成，不能�
 
 - **status**: [~] v1 已冻结并完成正式执行（Firewall MCP commit `d4d9ad8`）；
   正式执行暴露 5 条冻结契约缺陷，用户已批准建立版本化 v2；candidate 已生成，
+  工具契约和 v2 manifest 支持已实现（Firewall MCP commits `1227b40`, `f5bc256`），
   待重新复核、签署和冻结
 - **requirements**: E-01, E-02, E-03
 - **files**: `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/dataset.jsonl`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/rubric.yaml`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/README.md`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/fixtures/initial-device-state.json`

@@ -6,7 +6,7 @@ work-type: feature
 branch: feature/firewall-agent-mvp
 worktree: /Users/zhaotong/Documents/chaitin/code/PandaWiki
 source-leaf: (none)
-updated: 2026-08-14T11:23:30+08:00
+updated: 2026-08-14T11:54:06+08:00
 validate-modes: [correctness, e2e:OpenAPI, eval-bench]
 sdlc-gate: P5-eval-v2-freeze
 
@@ -54,6 +54,7 @@ sdlc-gate: P5-eval-v2-freeze
 - [x] build：P5-T3 v1 正式采集和网络恢复后的修正采集完成；22/30 确定性无错误、8/30 确定性失败、0 个安全失败
 - [~] build：P5-T1 v2 candidate 已生成（`evals/candidates/v2/`）并保留 v1 release；
   等待 `tong.zhao` 逐条复核后重新冻结；v1 正式总体结果因人工评分未填写仍为 `0/30 FAIL`
+- [x] build：Eval v2 工具契约与版本化冻结 manifest 支持完成（Firewall MCP commits `1227b40`, `f5bc256`）；v1 兼容测试和 v2 draft 冻结拒绝测试通过
 - [ ] build：P5-T4 MVP 验收报告与生产化待办
 - [ ] validate：correctness 通过
 - [ ] validate：e2e 通过
@@ -291,7 +292,8 @@ sdlc-gate: P5-eval-v2-freeze
 - 2026-08-14 确认 `CMP-05`、`REF-02`、`REF-03`、`WR-02`、`WR-05` 为冻结 Eval 契约缺陷，不能通过 Prompt 强迫 Agent 违反已批准安全规则；`REF-04`、`RO-03`、`WR-04` 保留为真实 Agent 偏差。
 - 2026-08-14 用户批准建立版本化 Eval v2：v1 数据集和正式结果不可变保留；v2 从 `evals/candidates/v2/` 经重新复核签署后晋级 `evals/releases/v2/`；服务端主动攻击验证迁入独立 adversarial suite。
 - 2026-08-14 Firewall MCP 已生成 `evals/releases/v1/`、`evals/candidates/v2/` 和 `evals/adversarial/v2/`；v2 保持 draft/pending，冻结门按预期拒绝，未伪造复核签名。
+- 2026-08-14 Firewall MCP 完成 `required_tools`、`allowed_extra_tools`、Agent 拒绝篡改场景及 v2 freeze manifest 版本支持；完整 race/build/vet/diff check 通过。该实现不改变 v2 candidate 的 draft/pending 状态。
 
 ## Next action
 
--> review `evals/candidates/v2/` case-by-case; after approval freeze v2, run the full 30-case suite, human scoring, and independent adversarial tests
+-> review `evals/candidates/v2/` case-by-case; after approval update v2 reviewer manifest and freeze, then run the full 30-case suite, human scoring, and independent adversarial tests
