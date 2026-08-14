@@ -610,7 +610,8 @@ MCP、Agent 配置和验收资产。必须作为独立整改门完成，不能�
 - **status**: [~] v1 已冻结并完成正式执行（Firewall MCP commit `d4d9ad8`）；
   正式执行暴露 5 条冻结契约缺陷，用户已批准建立版本化 v2；candidate 已生成，
   工具契约和 v2 manifest 支持已实现（Firewall MCP commits `1227b40`, `f5bc256`），
-  待重新复核、签署和冻结
+  复核清单和未签署 manifest 模板已准备（Firewall MCP 当前提交待记录），
+  待 `tong.zhao` 逐条复核、签署和冻结
 - **requirements**: E-01, E-02, E-03
 - **files**: `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/dataset.jsonl`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/rubric.yaml`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/README.md`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/fixtures/initial-device-state.json`
 - **read_first**: `.sdlc/spec.md#7-Eval-契约`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/fixtures/knowledge-expectations.json`, `.sdlc/evidence/full-chain-smoke.md`
@@ -619,7 +620,7 @@ MCP、Agent 配置和验收资产。必须作为独立整改门完成，不能�
   `required_tools/allowed_extra_tools/forbidden_tools` 三层工具契约；服务端主动攻击
   从 Agent Eval 迁入独立 adversarial suite。由领域人员重新逐条复核并签署后晋级
   `evals/releases/v2/`，计算独立 SHA-256，禁止覆盖 v1。
-- **acceptance_criteria**: `jq -s 'length == 30' evals/dataset.jsonl` 返回 true；按 category 聚合为 `10/5/5/5/5`；每条具备真实 annotator 和 `review_status=frozen`；README 中三个 SHA-256 与实际文件一致；`eval-freeze-check` PASS。当前冻结版本由 `tong.zhao` 同时承担 MVP 标注人与 reviewer 两个逻辑角色，生产阶段再升级为严格职责分离。发起身份不匹配已明确归入 P5-T3 独立对抗测试。预冻结审计与冻结记录见 `.sdlc/evidence/p5-dataset-pre-freeze-audit.md`、`evals/freeze-review.json`。
+- **acceptance_criteria**: `jq -s 'length == 30' evals/dataset.jsonl` 返回 true；按 category 聚合为 `10/5/5/5/5`；每条具备真实 annotator 和 `review_status=frozen`；README 中三个 SHA-256 与实际文件一致；`eval-freeze-check` PASS。当前冻结版本由 `tong.zhao` 同时承担 MVP 标注人与 reviewer 两个逻辑角色，生产阶段再升级为严格职责分离。发起身份不匹配已明确归入 P5-T3 独立对抗测试。预冻结审计、v2 复核包与冻结记录见 `.sdlc/evidence/p5-dataset-pre-freeze-audit.md`、`.sdlc/evidence/p5-eval-contract-conflicts.md`、`evals/freeze-review.json`。
 
 ### Task P5-T2: 用 TDD 实现可复现 Eval Runner
 

@@ -70,5 +70,18 @@ candidate 的 `draft/pending` 状态。
 v2 candidate 的样本和 Rubric 仍为 draft/pending，冻结检查按预期失败；这不是
 错误，而是防止未经真实复核误标 frozen 的门控证据。
 
+2026-08-14 已补齐可执行的 v2 领域复核包：
+
+- `firewall-mcp/evals/candidates/v2/review-checklist.md`：覆盖 30/30 个样本，
+  逐条列出证据、工具契约、终态和复核重点。
+- `firewall-mcp/evals/candidates/v2/freeze-review.example.json`：未签署模板，
+  明确不可作为正式冻结 manifest。
+- `firewall-mcp/artifacts/eval-v2-review-kit-20260814.md`：本轮验证和闸口证据。
+
+README 原先给出的 candidate 检查命令缺少 `cmd/eval` 必填参数，已改为真实可执行
+的 `TestLoadVersionTwoCandidateDataset` 检查，并补充完整的
+`cmd/eval-freeze-check` 预期失败命令。复核包准备不等于领域批准；当前仍未创建
+`evals/releases/v2/`，未生成正式 v2 manifest。
+
 Firewall MCP 侧详细审计：
 `artifacts/eval-contract-conflicts-20260814.md`。

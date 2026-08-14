@@ -296,7 +296,8 @@ sdlc-gate: P5-eval-v2-freeze
 - 2026-08-14 Firewall MCP 已生成 `evals/releases/v1/`、`evals/candidates/v2/` 和 `evals/adversarial/v2/`；v2 保持 draft/pending，冻结门按预期拒绝，未伪造复核签名。
 - 2026-08-14 Firewall MCP 完成 `required_tools`、`allowed_extra_tools`、Agent 拒绝篡改场景及 v2 freeze manifest 版本支持；完整 race/build/vet/diff check 通过。该实现不改变 v2 candidate 的 draft/pending 状态。
 - 2026-08-14 发现并修复 manifest/Rubric version 不一致仍可通过冻结门的问题；现在要求版本严格一致，v2 candidate 仍保持 draft/pending。
+- 2026-08-14 已准备 v2 领域复核包：README 检查命令已修正，新增 30/30 样本复核清单和未签署 manifest 模板；candidate 加载测试、race、vet 通过，未签署模板的冻结门按预期拒绝。详细证据为 `firewall-mcp/artifacts/eval-v2-review-kit-20260814.md`。未创建 v2 release、未生成正式 manifest、未伪造 reviewer 或人工评分。
 
 ## Next action
 
--> review `evals/candidates/v2/` case-by-case; after approval update v2 reviewer manifest and freeze, then run the full 30-case suite, human scoring, and independent adversarial tests
+-> `tong.zhao` review `evals/candidates/v2/review-checklist.md` case-by-case; after explicit approval update the v2 reviewer manifest and freeze, then run the full 30-case suite, human scoring, and independent adversarial tests
