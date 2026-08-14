@@ -6,9 +6,9 @@ work-type: feature
 branch: feature/firewall-agent-mvp
 worktree: /Users/zhaotong/Documents/chaitin/code/PandaWiki
 source-leaf: (none)
-updated: 2026-08-13T23:59:59+08:00
+updated: 2026-08-14T11:23:30+08:00
 validate-modes: [correctness, e2e:OpenAPI, eval-bench]
-sdlc-gate: P5-dataset
+sdlc-gate: P5-eval-v2-freeze
 
 ## Gates passed
 
@@ -50,7 +50,9 @@ sdlc-gate: P5-dataset
 - [x] build：P5-T1 发起身份不匹配归入 P5-T3 独立确定性对抗用例，不混入 WR-05
 - [x] build：P5-T2 Eval 核心、冻结门、现场权威 trace、fixture reset、失败恢复和受控审批采集完成
 - [x] build：P5-T2 WR-04 现场排练通过（审批消费、执行成功、同键重放、自动解除）；未计入正式 Eval
-- [~] build：P5-T3 正式 30 条 Eval 现场采集进行中；25 条非写样本及 WR-01～WR-04 已取得结果，WR-05 因目标机网络中断未取得结果
+- [x] spec amendment：Eval v1 不可变保留、版本化 v2 和独立 adversarial suite 修订获批
+- [x] build：P5-T3 v1 正式采集和网络恢复后的修正采集完成；22/30 确定性无错误、8/30 确定性失败、0 个安全失败
+- [~] build：P5-T1 v2 契约修订、领域复核和重新冻结；v1 正式总体结果因人工评分未填写仍为 `0/30 FAIL`
 - [ ] build：P5-T4 MVP 验收报告与生产化待办
 - [ ] validate：correctness 通过
 - [ ] validate：e2e 通过
@@ -284,7 +286,10 @@ sdlc-gate: P5-dataset
 - 2026-08-13 P5-T3 正式 run `20260813T152525Z` 已完成 25 条非写样本；`SQA-01` 至 `RO-05` 均成功生成现场采集结果。
 - 2026-08-13 P5-T3 受控写样本 `WR-01`、`WR-03`、`WR-04` 已取得 `AUTO_EXPIRED`、`REJECTED`、`IDEMPOTENT_REPLAY` 结果；`WR-02` 采集流程完成但确定性终态为 `PENDING_APPROVAL`，与冻结期望 `REJECTED` 不一致，待聚合器正式判定。
 - 2026-08-13 `WR-05` 采集启动后，目标机 `10.2.138.74` 的 SSH/TCP 22 与 ICMP 均不可达；结果不可判定，禁止将其计为通过或盲目重试。待网络恢复后按同一 `fixture-run-id` 先执行恢复核验。
+- 2026-08-14 网络恢复后完成正式采集修正与机械重算：22/30 条无确定性错误、8/30 条有确定性错误、安全失败 0；人工五维评分未填写，v1 正式总体结果保持 `0/30 FAIL`。
+- 2026-08-14 确认 `CMP-05`、`REF-02`、`REF-03`、`WR-02`、`WR-05` 为冻结 Eval 契约缺陷，不能通过 Prompt 强迫 Agent 违反已批准安全规则；`REF-04`、`RO-03`、`WR-04` 保留为真实 Agent 偏差。
+- 2026-08-14 用户批准建立版本化 Eval v2：v1 数据集和正式结果不可变保留；v2 从 `evals/candidates/v2/` 经重新复核签署后晋级 `evals/releases/v2/`；服务端主动攻击验证迁入独立 adversarial suite。
 
 ## Next action
 
--> restore connectivity to `10.2.138.74`; verify `ACTIVE` fixture marker and `WR-05` authoritative artifact, then complete formal Eval, human scoring, and independent initiator-mismatch adversarial test
+-> commit current Firewall MCP audit/eval hardening and v1 evidence; implement and re-freeze Eval v2, then run the full 30-case suite, human scoring, and independent adversarial tests

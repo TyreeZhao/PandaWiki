@@ -607,11 +607,16 @@ MCP、Agent 配置和验收资产。必须作为独立整改门完成，不能�
 
 ### Task P5-T1: 冻结 30 条参考数据集和 Rubric
 
-- **status**: [x] frozen / annotator and reviewer `tong.zhao` (`防火墙方案技术负责人`); `eval-freeze-check` PASS; Firewall MCP commit `d4d9ad8`
+- **status**: [~] v1 已冻结并完成正式执行（Firewall MCP commit `d4d9ad8`）；
+  正式执行暴露 5 条冻结契约缺陷，用户已批准建立版本化 v2；v2 待重新复核、签署和冻结
 - **requirements**: E-01, E-02, E-03
 - **files**: `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/dataset.jsonl`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/rubric.yaml`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/README.md`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/fixtures/initial-device-state.json`
 - **read_first**: `.sdlc/spec.md#7-Eval-契约`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/fixtures/knowledge-expectations.json`, `.sdlc/evidence/full-chain-smoke.md`
-- **action**: 编写 10 条单标准问答、5 条跨标准比较、5 条证据不足、5 条只读查询、5 条写流程/越权样本。每条包含 Spec 7.2 的全部字段；写样本覆盖批准、拒绝、服务端授权过期、重复消费、相同幂等键重放和参数篡改。发起身份不匹配不混入 `WR-05`，由 P5-T3 使用独立攻击客户端和不同认证上下文执行确定性对抗测试。Rubric 逐字固化 Spec 7.3–7.5 的评分和硬门，并断言 MCP Schema 与 Agent 持久化数据不存在 `approval_code`。计算 dataset、rubric 和 fixture 的 SHA-256 并写入 README，评测执行后禁止覆盖。
+- **action**: 保留 v1 数据集、冻结清单和正式 FAIL 结果。v2 在
+  `evals/candidates/v2/` 中修正已审计的 5 条契约冲突，引入
+  `required_tools/allowed_extra_tools/forbidden_tools` 三层工具契约；服务端主动攻击
+  从 Agent Eval 迁入独立 adversarial suite。由领域人员重新逐条复核并签署后晋级
+  `evals/releases/v2/`，计算独立 SHA-256，禁止覆盖 v1。
 - **acceptance_criteria**: `jq -s 'length == 30' evals/dataset.jsonl` 返回 true；按 category 聚合为 `10/5/5/5/5`；每条具备真实 annotator 和 `review_status=frozen`；README 中三个 SHA-256 与实际文件一致；`eval-freeze-check` PASS。当前冻结版本由 `tong.zhao` 同时承担 MVP 标注人与 reviewer 两个逻辑角色，生产阶段再升级为严格职责分离。发起身份不匹配已明确归入 P5-T3 独立对抗测试。预冻结审计与冻结记录见 `.sdlc/evidence/p5-dataset-pre-freeze-audit.md`、`evals/freeze-review.json`。
 
 ### Task P5-T2: 用 TDD 实现可复现 Eval Runner
@@ -638,7 +643,10 @@ MCP、Agent 配置和验收资产。必须作为独立整改门完成，不能�
 
 ### Task P5-T3: 执行评测、人工评分和安全对抗测试
 
-- **status**: [~] P5-T1 dataset freeze passed；正式 run `20260813T152525Z` 已完成 25 条非写样本及 WR-01～WR-04；WR-05 启动后目标机网络中断，待恢复核验；人工五维评分和独立发起身份不匹配对抗测试尚未执行
+- **status**: [~] v1 正式 run `20260813T152525Z` 与修正 run
+  `20260814T030944Z` 已完成；机械重算为 22/30 确定性无错误、8/30 确定性失败、
+  0 个安全失败。人工评分未填写，因此正式结果仍为 `0/30 FAIL`。待 v2 重冻后完整
+  重跑 30 条，并执行独立 adversarial suite
 - **requirements**: R-09, E-02, E-03, E-04
 - **files**: `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/eval-results-${run_id}.json`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/human-scores-${run_id}.json`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/adversarial-results-${run_id}.json`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/artifacts/eval-summary.json`
 - **read_first**: `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/evals/README.md`, `/Users/zhaotong/Documents/chaitin/code/firewall-mcp/cmd/eval/main.go`

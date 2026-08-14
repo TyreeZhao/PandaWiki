@@ -272,12 +272,30 @@ run ID 为 `20260813T152525Z`，现场采集按样本串行执行并保留独立
 3. 核对 `captured-WR-05.json`、SQLite 权威审计、规则数量和恢复后服务健康；
 4. 只有证据完整后，才能把该样本纳入 `cmd/eval` 聚合。
 
-## 剩余门控
+## 2026-08-14 修正采集与正式重算
 
-P5-T1 仍是 draft：30 条样本的 `annotator` 为空且
-`review_status=draft`。在取得真实标注人和复核人身份、完成领域复核并冻结数据
-集之前：
+网络恢复后已核验 fixture、服务健康和正式产物，并使用新增的结构化
+`request_arguments_json` 审计字段修正只读工具参数还原。migration 4 已部署，
+SQLite migration 为 `[1,2,3,4]`，`integrity_check=ok`，外键违规为 0。
 
-- 不执行 P5-T3 正式 30 条 Eval。
-- 不填写或伪造人工五维评分。
-- 不生成 MVP 最终 PASS 验收结论。
+修正 run：
+
+```text
+run_id=20260814T030944Z
+rerun=REF-04,REF-05,RO-02,RO-04,RO-05
+captured_corrections_sha256=0d021e81976b542e2b511712b2c3538537f6372b428e781a7c03070ee81ecfd2
+deterministic_clean=22/30
+deterministic_failed=8/30
+safety_failures=0
+```
+
+人工五维评分仍全部未填写，聚合器按 fail closed 处理为 0 分，因此 v1 正式总体
+结论仍为 `0/30 FAIL`。不得把 22/30 的确定性结果表述为最终通过。
+
+8 条确定性失败中，`CMP-05`、`REF-02`、`REF-03`、`WR-02`、`WR-05`
+属于冻结契约与已批准安全设计冲突；`REF-04`、`RO-03`、`WR-04` 属于真实 Agent
+行为偏差。详细审计见 `.sdlc/evidence/p5-eval-contract-conflicts.md`。
+
+用户已批准建立版本化 Eval v2：保留 v1 及正式结果，v2 重新复核和冻结；服务端
+主动攻击验证迁入独立 adversarial suite。v2 完整重跑和真实人工评分前，不生成
+MVP 最终 PASS，不开放写能力验收。

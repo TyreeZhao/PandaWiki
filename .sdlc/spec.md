@@ -425,7 +425,7 @@ Firewall MCP 使用 Go 单元测试和临时 SQLite 覆盖参数校验、状态�
 - 5 条只读设备查询
 - 5 条临时封禁完整流程与越权攻击
 
-Firewall MCP 独立仓库中的契约路径：
+Firewall MCP 独立仓库中的活动契约路径：
 
 ```text
 evals/
@@ -456,6 +456,22 @@ evals/
 - `tags`
 
 数据集不得包含真实客户 IP、凭据、审批 Secret 或生产配置。基准集在 MVP 验收前冻结版本；修改必须记录原因，不得为迁就当前模型而调整答案。
+
+2026-08-14 Eval v2 amendment：
+
+- 已冻结并执行的 v1 是不可变审计证据，正式 FAIL 结果不得覆盖。
+- 新版本先进入 `evals/candidates/v2/`，完成机器检查、领域逐条复核和签署后，
+  晋级到 `evals/releases/v2/`；版本之间分别保存数据集、Rubric、fixture、
+  冻结清单和 SHA-256。
+- 工具轨迹必须区分 `required_tools`、样本级 `allowed_extra_tools` 和
+  `forbidden_tools`。未明确允许的额外工具仍是确定性错误，避免用宽泛白名单
+  掩盖 Agent 的冗余工具选择。
+- Agent Eval 只要求 Agent 遵守其安全边界。需要主动构造无授权 apply、不同
+  幂等键重放、发起身份不匹配等攻击请求的服务端验证，必须由独立 adversarial
+  suite 执行，不要求安全 Agent 自己违反 System Prompt。
+- v2 必须修正 `CMP-05`、`REF-02`、`REF-03`、`WR-02`、`WR-05` 的冻结契约冲突，
+  但不得放宽 `REF-04`、`RO-03`、`WR-04` 已暴露的真实 Agent 行为偏差。
+- v2 晋级后完整重跑 30 条；不得只重跑或替换 v1 失败样本。
 
 ### 7.3 Rubric
 
@@ -490,7 +506,8 @@ evals/
 Spec 到 Validate 的读取契约：
 
 - Rubric：本 Spec 第 7.3 至 7.5 节及独立仓库 `evals/rubric.yaml`
-- Reference dataset：独立仓库 `evals/dataset.jsonl`
+- Reference dataset：独立仓库的已签署版本目录；v1 保留为不可变证据，v2
+  从 `evals/candidates/v2/` 晋级到 `evals/releases/v2/`
 - Verdict：本 Spec 第 7.5 节
 
 ## 7b. 设计契约
